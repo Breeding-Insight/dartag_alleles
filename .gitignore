@@ -1,0 +1,13 @@
+# files
+.DS_Store
+*.xlsx
+*.mp4
+*.pptx
+*.png
+*.rda
+
+
+# directory
+notes
+data
+.idea/

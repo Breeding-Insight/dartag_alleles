@@ -1,0 +1,110 @@
+#!/usr/bin/python3
+
+def rev_complement(seq):
+    complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+    seq_rev = "".join(complement.get(base, base) for base in reversed(seq.upper()))
+    return(seq_rev)
+
+
+def get_rev_compliment_fasta(fastaDB, alleles):
+    inp = open(fastaDB)
+    outp = open(fastaDB.replace('.fa', '_rev.fa'), 'w')
+    outp_botloci = open(fastaDB.replace('.fa', '.botloci'), 'w')
+    line = inp.readline()
+    plus_count = 0
+    minus = []
+    while line:
+        if line.startswith('>'):
+            if alleles[line[1:].strip()][-1] == '-':
+                # Add the markers on minus strand of the reference genome to a list
+                marker = line.split('|')[0][1:]
+                if marker not in minus:
+                    minus.append(marker)
+
+                outp.write(line)
+                seq = inp.readline()
+                seq = seq.strip()
+                seq_rev = rev_complement(seq)
+                outp.write(seq_rev + '\n')
+            else:
+                plus_count += 1
+                outp.write(line)
+                line = inp.readline()
+                outp.write(line)
+        else:
+            print('Check')
+        line = inp.readline()
+    print('# Number of alleles on PLUS strand: ', plus_count)
+    print('# Number of alleles on MINUS strand: ', len(minus) * 2)
+    for marker in minus:
+        outp_botloci.write(marker + '\n')
+
+    inp.close()
+    outp.close()
+    outp_botloci.close()
+
+
+def ext_unique_hits_for_queries(blast):
+    # VaccDscaff11_000042737|Ref_0001    54  1    54  VaccDscaff11_000042737|Ref  361     210     157     54  100     100.000 3.63e-25
+    inp = open(blast)
+    line = inp.readline()
+    alleles = {}
+    while line:
+        line_array = line.strip().split()
+        query_array = line_array[0].rsplit('_', 1)[0]
+        subject_array = line_array[4]
+        if query_array == subject_array:
+            # Determine the alignment orientation and add a note to the line_array
+            if int(line_array[6]) > int(line_array[7]):
+                line_array.append('-')
+            else:
+                line_array.append('+')
+
+            # Add information to a dictionary and make sure every subject sequence only appear once
+            if line_array[4] not in alleles:
+                alleles[line_array[4]] = line_array
+            else:
+                # Compare length of coverage
+                query_cov_inDict = abs(int(alleles[line_array[4]][3]) - int(alleles[line_array[4]][2])) + 1
+                query_cov = abs(int(line_array[3]) - int(line_array[2])) + 1
+                if query_cov > query_cov_inDict:
+                    print('# Update this query: \n', alleles[line_array[4]])
+                    print('# With this one:', line_array)
+                    alleles[line_array[4]] = line_array
+                elif query_cov == query_cov_inDict:
+                    # Compare alignment identity
+                    if float(line_array[10]) > float(alleles[line_array[4]][10]):
+                        print('# Update this query: \n', alleles[line_array[4]])
+                        print('# With this one:', line_array)
+                        alleles[line_array[0]] = line_array
+                    else:
+                        pass
+                else:
+                    pass
+        else:
+            pass
+        line = inp.readline()
+    inp.close()
+    print('Number of Ref and Alt alleles: ', len(alleles))
+    return(alleles)
+
+
+if __name__=='__main__':
+
+    import argparse
+
+    parser=argparse.ArgumentParser(description="Extract fasta sequences of 3K DArTag panel")
+
+    parser.add_argument('blast',
+                        help='BLAST result of 54-bp amplicon sequences to 180 bp flanking sequences')
+
+    parser.add_argument('fastaDB',
+                        help='Allele DB')
+
+    args=parser.parse_args()
+    
+    print('# Running db05_determine_alleleOri_from_blast_AND_update_f180bp.py on', args.blast)
+
+    alleles = ext_unique_hits_for_queries(args.blast)
+
+    get_rev_compliment_fasta(args.fastaDB, alleles)
