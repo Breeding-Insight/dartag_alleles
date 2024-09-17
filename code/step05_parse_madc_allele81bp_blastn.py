@@ -77,6 +77,7 @@ def get_unique_blast_hits(blast, db_allele_fasta):
         else:
             query_base = line_array[0].rsplit('_', 2)[0]
         subject_base = line_array[4].rsplit('_', 1)[0]
+
         if query_base == subject_base:
             if line_array[0] not in blast_unique:
                 blast_unique[line_array[0]] = line_array
@@ -437,7 +438,11 @@ if __name__=='__main__':
     tmp_rename_report = get_tmp_rename_report(args.report)
     # tmp_rename_report = {'chr3.1_078721100|RefMatch_tmp_0001': ['chr3.1_078721100', 'TCACCAACTTTCAAGTTATTGTCTTCTGCAAATATCTTCCATTCACCTGAGTACATTTCAAATCTTAGTCCTGACCGATCT', '0', '0', ...}
 
+
     blast_unique = get_unique_blast_hits(args.blast, args.db_allele_fasta)
+    outp = open(args.blast + '.unique.csv', 'w')
+    for key, value in blast_unique.items():
+        outp.write(','.join(value) + '\n')
     
     updated_db_allele_cnt, dbVStmp_alleles_lut, tmpVSdb_alleles_lut, new_alleles = determine_allele_status(db_allele_cnt, blast_unique, args.readme)
     '''

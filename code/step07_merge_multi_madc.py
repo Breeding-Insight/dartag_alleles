@@ -8,11 +8,13 @@ def concat_madc(reports, outfile):
     while index < len(reports_list):
         df1 = pd.read_csv(reports_list[index], index_col='AlleleID')
         print('\n### Are there duplicate row names in', reports_list[index], '?', df1[df1.index.duplicated()])
+        print('\n### Are there duplicate column names in', reports_list[index], '?', df1.T[df1.T.index.duplicated()])
         if 'readCountSum' in df1.columns:
             df1 = df1.drop(columns=['readCountSum'])
         else:
             pass
-        
+        index += 1
+
         if 'CloneID' in df_concat.columns:
             df1 = df1.rename(columns={'CloneID': 'CloneID_01', 'AlleleSequence': 'AlleleSequence_01'})
             df_concat = pd.concat([df_concat, df1], axis=1)
@@ -27,7 +29,7 @@ def concat_madc(reports, outfile):
             df_concat = df_concat.rename(columns={'index': 'AlleleID'})
         else:
             df_concat = df1
-        index += 1
+        
  
     # Sort the alleles from Ref, Alt, RefMatch, AltMatch
     df_concat = df_concat.set_index('AlleleID')
@@ -52,6 +54,7 @@ def concat_madc(reports, outfile):
         clone_df = clone_df.reindex(reindex)
         df_ordered = pd.concat([df_ordered, clone_df], axis=0)
     df_ordered.to_csv(outfile, index=True)
+
 
 
 

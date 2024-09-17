@@ -53,7 +53,10 @@ def add_missing_ref_alt_to_madc(seq_dict, report):
             seq = seq_dict[alleleID + '_0001']
             ref_record = ','.join([alleleID, cloneID, seq, 'NA'] + ['0'] * (cols - 4)) + '\n'
             alleles_full[cloneID].insert(0, ref_record)
-        elif key + '|Alt' not in value:
+        else:
+            pass
+        
+        if key + '|Alt' not in value:
             print('Marker loci without Alt haplotype: ', key)
             alleleID = key + '|Alt'
             cloneID = key

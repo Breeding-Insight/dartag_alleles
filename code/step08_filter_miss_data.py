@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 # Parse MADC with haplotypes assigned fixed ID, i.e., after populating microhaplotype db
-
-
 def update_madc_report(report, df, remove_markers, keep_samples):
     import pandas as pd
     outf = report.replace('.csv', '_filter_miss.csv')
@@ -24,7 +22,7 @@ def update_madc_report(report, df, remove_markers, keep_samples):
     df_keep_samples.to_csv(outf, index=False)
 
 
-def get_marker_missing_data_rate_and_filter(report, df_sum_filterSamples):
+def generate_filtered_data(report, df_sum_filterSamples):
     ## #Samples with data
     df_sum_filterSamples_t = df_sum_filterSamples.T
     print('# Filtering at marker level')
@@ -32,8 +30,6 @@ def get_marker_missing_data_rate_and_filter(report, df_sum_filterSamples):
     marker_miss_sample_rate = {}
     samples_with_data = {}
     sample_count = len(df_sum_filterSamples_t.index)
-    outp_marker = open(report.replace('.csv', '_miss_marker.csv'), 'w')
-    outp_marker.write('MarkerID,#Samples_missing,#Sample/Total, #Samples_w_data\n')
     for column in df_sum_filterSamples_t:
         columnSeriesObj = len(df_sum_filterSamples_t[df_sum_filterSamples_t[column] < 10])
         marker_missing_rate = round(float(columnSeriesObj)/sample_count * 100, 2)
@@ -44,13 +40,61 @@ def get_marker_missing_data_rate_and_filter(report, df_sum_filterSamples):
         else:
             samples_with_data[marker_with_sample_rate] = df_sum_filterSamples_t[df_sum_filterSamples_t[column] >= 10].index.tolist()
         marker_miss_sample_rate[column] = [columnSeriesObj, marker_missing_rate, marker_with_sample_rate]
-        outp_marker.write(column + ',' + str(columnSeriesObj) + ',' + str(marker_missing_rate) + '\n')
+
+    # Retaining a marker locus based on whichever is smaller below:
+    #       * At least 10 samples, each having a minimum of 2 reads
+    #       * At least 5% samples, each having a minimum of 2 reads
+    #outp_marker_summary.write('Total markers,' + str(len(marker_miss_sample_rate)) + '\n')
+    samples = len(df_sum_filterSamples_t.index)  # Total number of samples
+    threshold_10samples = round(10.0/samples * 100, 2)
+    if threshold_10samples < 5:
+        threshold = 100 - threshold_10samples
+    else:
+        threshold = 95
+    remove_markers = [key for key, value in marker_miss_sample_rate.items() if int(value[1]) >= threshold]
+    keep_markers = [key for key, value in marker_miss_sample_rate.items() if int(value[1]) < threshold]
+    print('==> Total markers: ', len(marker_miss_sample_rate))
+    print('10 samples in %total samples: ', threshold_10samples)
+    print('Threshold used in filtering markers with missing data: ', threshold)
+    print('Number of markers with missing data (remove from the report):', len(remove_markers))
+    print('Check marker missing data summary for markers removed.')
+    df_sum_filterMarkers = df_sum_filterSamples_t[keep_markers]
+    df_sum_filterMarkers = df_sum_filterMarkers.T
+    outp_marker_filter = open(report.replace('.csv', '_miss_sample_marker_filter.csv'), 'w')
+    df_sum_filterMarkers.to_csv(outp_marker_filter)
+    return(remove_markers)
+
+def get_marker_missing_data_rate(report, df_sum):
+    ## All samples
+    df_sum_t = df_sum.T
+    print('# Get missing data at marker level')
+    print('# Total markers: ', len(df_sum_t.columns))
+    marker_miss_sample_rate = {}
+    samples_with_data = {}
+    sample_count = len(df_sum_t.index)
+    outp_marker = open(report.replace('.csv', '_miss_marker.csv'), 'w')
+    outp_marker.write('MarkerID,#Samples_missing,#Sample/Total, #Samples_w_data\n')
+    for column in df_sum_t:
+        columnSeriesObj = len(df_sum_t[df_sum_t[column] < 10])
+        marker_missing_rate = round(float(columnSeriesObj) / sample_count * 100, 2)
+        marker_with_sample_rate = 100.00 - marker_missing_rate
+        # Add sample names with_data into a dict
+        if marker_with_sample_rate in samples_with_data:
+            samples_with_data[marker_with_sample_rate] = list(set(
+                samples_with_data[marker_with_sample_rate] + df_sum_t[
+                    df_sum_t[column] >= 10].index.tolist()))
+        else:
+            samples_with_data[marker_with_sample_rate] = df_sum_t[
+                df_sum_t[column] >= 10].index.tolist()
+        marker_miss_sample_rate[column] = [columnSeriesObj, marker_missing_rate, marker_with_sample_rate]
+        
+        outp_marker.write(str(column) + ',' + str(columnSeriesObj) + ',' + str(marker_missing_rate) + '\n')
     outp_marker.close()
     
     # Output table
     outp_marker_summary = open(report.replace('.csv', '_miss_marker_summary.csv'), 'w')
     # Get sample names within each with_data range 
-    outp_rate = open(report.replace('.csv', '_miss_rate_withSamples.csv'), 'w')    
+    outp_rate = open(report.replace('.csv', '_miss_rate_withSamples.csv'), 'w')
     import datetime
     now = datetime.datetime.now()
     nowf = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -62,7 +106,7 @@ def get_marker_missing_data_rate_and_filter(report, df_sum_filterSamples):
     for i in range(0, 100, 5):
         # Added this part on 2023.9.19
         if i == 0:
-            unique_samples = df_sum_filterSamples.columns.tolist()
+            unique_samples = df_sum.columns.tolist()
         else:
             samples = []
             for key in sorted(samples_with_data.keys()):
@@ -70,7 +114,7 @@ def get_marker_missing_data_rate_and_filter(report, df_sum_filterSamples):
                     samples = samples + samples_with_data[key]
             unique_samples = list(set(samples))
             outp_rate.write('>=' + str(i) + '%,' + ','.join(unique_samples) + '\n')
-
+        
         marker_count = len([key for key, value in marker_miss_sample_rate.items() if int(value[2]) >= i])
         outp_marker_summary.write('>=' + str(i) + '%,' + str(marker_count) + ',' + str(len(unique_samples)) + '\n')
         stdout = '>=' + str(i) + '%\t' + str(marker_count) + '\t' + str(len(unique_samples))
@@ -87,34 +131,6 @@ def get_marker_missing_data_rate_and_filter(report, df_sum_filterSamples):
     outp_marker_summary.write('100%,' + str(marker_count) + ',' + str(len(unique_samples)) + '\n')
     stdout = '100%\t' + str(marker_count) + '\t' + str(len(unique_samples))
     print(stdout)
-    
-    # Retaining a marker locus based on whichever is smaller below:
-    #       * At least 10 samples, each having a minimum of 2 reads
-    #       * At least 5% samples, each having a minimum of 2 reads
-    #outp_marker_summary.write('Total markers,' + str(len(marker_miss_sample_rate)) + '\n')
-    samples = len(df_sum_filterSamples_t.index)  # Total number of samples
-    threshold_10samples = round(10.0/samples * 100, 2)
-    if threshold_10samples < 5:
-        threshold = 100 - threshold_10samples
-        outp_marker_summary.write('\n# Use threshold of at least 10 samples with each sample having a minimum of 10 reads per marker locus: ' + str(threshold) + '\n')
-    else:
-        threshold = 95
-        outp_marker_summary.write('\n# Use threshold of at least 5% samples with each sample having a minimum of 10 reads per marker locus: ' + str(threshold) + '\n')
-    
-    remove_markers = [key for key, value in marker_miss_sample_rate.items() if int(value[1]) >= threshold]
-    keep_markers = [key for key, value in marker_miss_sample_rate.items() if int(value[1]) < threshold]
-    outp_marker_summary.write('#Markers removed,' + str(len(remove_markers)) + '\n' + '\n'.join(remove_markers) + '\n')
-    outp_marker_summary.close()
-    print('==> Total markers: ', len(marker_miss_sample_rate))
-    print('10 samples in %total samples: ', threshold_10samples)
-    print('Threshold used in filtering markers with missing data: ', threshold)
-    print('Number of markers with missing data (remove from the report):', len(remove_markers))
-    print('Check marker missing data summary for markers removed.')
-    df_sum_filterMarkers = df_sum_filterSamples_t[keep_markers]
-    df_sum_filterMarkers = df_sum_filterMarkers.T
-    outp_marker_filter = open(report.replace('.csv', '_miss_sample_marker_filter.csv'), 'w')
-    df_sum_filterMarkers.to_csv(outp_marker_filter)
-    return(df_sum_filterMarkers, remove_markers)
 
 
 def get_sample_missing_data_rate_and_filter(report, df_sum):
@@ -200,9 +216,10 @@ def get_haplotype_read_count_sum(df):
         else:
             pass
     print('# Number of microhaplotypes dropped due to missing data:', len(drop_hap))
-    
+
     # Reading through the df and get the read count sum of each markers of all possible haplotypes
     grouped_df = df.groupby('CloneID')
+    #print(grouped_df.get_group((list(grouped_df.groups)[0])))
     df_sum = pd.DataFrame()
     for clone, group in grouped_df:
         # sample_sum is a Series
@@ -247,6 +264,9 @@ if __name__=='__main__':
 
     df_sum = get_haplotype_read_count_sum(df)
 
+    # Generate marker missing data rate
+    get_marker_missing_data_rate(args.report, df_sum)
+
     '''
     Filter the data at SAMPLE level
     1. Generate stats for SAMPLEs' missing data rate and output samples by requesting more than 5% of the markers with data (read count per marker ≥10))
@@ -254,9 +274,10 @@ if __name__=='__main__':
     3. Generate an MADC file with filtered samples and markers
     '''
 
+    # Generate sample missing data rate and filter sample with >=95% missing markers
     df_sum_filterSamples, keep_samples = get_sample_missing_data_rate_and_filter(args.report, df_sum)
 
     # From the output from above, generate stats for marker missing rate
-    df_sum_filterMarkers, remove_markers = get_marker_missing_data_rate_and_filter(args.report, df_sum_filterSamples)
+    remove_markers = generate_filtered_data(args.report, df_sum_filterSamples)
 
     update_madc_report(args.report, df, remove_markers, keep_samples)
