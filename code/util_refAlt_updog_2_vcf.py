@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import pandas as pd
+from warnings import simplefilter
+simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 def get_updog_parameters(par):
     inp = open(par)
@@ -16,7 +19,6 @@ def get_updog_parameters(par):
 
 
 def convert_updog_dose_to_gt(updog_dose, ploidy):
-    import pandas as pd
     df_gt = pd.read_csv(updog_dose, index_col=[0])
     all_markers_wDose = df_gt.index.tolist()
     # For updog, the genotype is the estimated reference allele dosage for a given individual at a given SNP.
@@ -43,7 +45,6 @@ def add_missing_markers_2_par(all_markers_wDose, par_dict):
 
 
 def convert_dosage2vcf(updog_dose, new_vcf_header, df_gt, vcf_readCount, hh_df, bias_df, od_df, pmc_df):
-    import pandas as pd
     gt_markers = df_gt.index.tolist()
     outp = open(updog_dose.replace('.csv', '.vcf'), 'w')
     inp = open(new_vcf_header)
