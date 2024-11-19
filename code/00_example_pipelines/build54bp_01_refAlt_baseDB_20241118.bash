@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # Build based microhap db consisting only ref and alt alleles
 # For DArTag panels designed on the 54-bp technology
-# The microhap db will be ref and alt alleles of 81-bp by extending the 3' end sequences to the 54-bp fragments in DArTag report
 
-# TODO: change here ######
+# change here ######
 exec &> /Users/dz359/PycharmProjects/BI/strawberry_microhaplotype_db/data/strawberry_allele_db_v001_process.readme
 
 
-# TODO: change here ######
+# change here ######
 SCRIPTS_DIR='/Users/dz359/PycharmProjects/BI/01_dartag_alleles/code'
 MARKERID_LUT='/Users/dz359/PycharmProjects/BI/strawberry_microhaplotype_db/data/strawberry_5k_snpID_lut.csv'
 ALLELE_DB_DIR='/Users/dz359/PycharmProjects/BI/strawberry_microhaplotype_db/data'

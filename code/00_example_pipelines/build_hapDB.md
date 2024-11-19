@@ -1,5 +1,5 @@
 # 2024.3.21
-# Keep an .md file to trouble-shoot code
+# Keep a .md file to trouble-shoot code
 
 
 # For 81-bp amplicons from DArTag reports

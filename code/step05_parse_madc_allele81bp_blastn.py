@@ -1,6 +1,4 @@
 #!/usr/bin/python3
-# Parse the output file from running 'step01_rft_alleleID_AND_get_alleleSeq_forBaseDB.py'.
-
 
 def get_ref_alt_allele_fasta(db_allele_fasta):
     # alfalfa_allele_db_v001.fa
@@ -227,7 +225,6 @@ def generate_report_with_fixed_alleleID(report, tmp_rename_report, dbVStmp_allel
             same_allele_seq = {}
             for j in dbVStmp_alleles_lut[i]:
                 if j in tmp_rename_report:
-                    print(j, tmp_rename_report[j])
                     same_allele_seq[j] = tmp_rename_report[j][:2] + list(map(float, tmp_rename_report[j][2:]))
                     # 'AlleleID', 'CloneID', 'AlleleSequence'
                     meta_info = tmp_rename_report[j][:2]
@@ -274,7 +271,7 @@ def generate_report_with_fixed_alleleID(report, tmp_rename_report, dbVStmp_allel
     new_alleles_fasta = {}
     allele_cnt = 0
     allele_discarded = []
-    #### TODO: changed here on 2023-01-18!
+    #### NOTE: changed here on 2023-01-18!
     for i in tmp_rename_report:
         if i == 'AlleleID':
             outp_report.write(i + ',' + ','.join(tmp_rename_report[i]) + '\n')
@@ -322,12 +319,12 @@ def generate_new_db_lut(db_alleleCnt_lut_file, updated_db_allele_cnt, db_allele_
         else:
             outp_lut.write('\t'.join([i, str(updated_db_allele_cnt[i]), '0']) + '\n')
     outp_lut.close()
-    print('\n## Update allele COUNT database with new allele counts for RefMatch and AltMatch:')
+    print('## Update match allele cnt LUT with new allele counts for RefMatch and AltMatch:')
     print('  * Existing allele COUNT database: ', db_alleleCnt_lut_file)
     print('  * Updated allele COUNT database: ', outf)
 
     readme_out = open(readme, 'a')
-    readme_out.write('\n## Update allele COUNT database with new allele counts for RefMatch and AltMatch:\n')
+    readme_out.write('\n## Update match allele cnt LUT with new allele counts for RefMatch and AltMatch:\n')
     readme_out.write('  * Existing allele COUNT database: '+ db_alleleCnt_lut_file + '\n')
     readme_out.write('  * Updated allele COUNT database: ' + outf + '\n')
     readme_out.close()
@@ -418,8 +415,6 @@ if __name__=='__main__':
     else:
         pass
     
-    print('\n## Processing', args.report)
-    print('\n## Creating', args.readme)
     readme_out = open(args.readme, 'w')
     import datetime
     now = datetime.datetime.now()

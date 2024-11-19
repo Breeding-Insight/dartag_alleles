@@ -15,9 +15,6 @@ def determine_allele_status(cutadapt_fasta):
             remove.append(record.id)
         else:
             all_alleles[seq] = [record]
-    print('# Number of microhaplotypes:', cnt)
-    print('# Number of unique microhaplotypes:', len(all_alleles))
-    print('# Number of microhaplotypes need removal:', len(remove))
     
     outp_dup = open(cutadapt_fasta.replace('.fa', '_dup.csv'), 'w')
     outp_dup.write('Keep,Remove\n')
@@ -32,6 +29,9 @@ def determine_allele_status(cutadapt_fasta):
         else:
             pass
     outp_dup.close()
+    print('  # Number of RefMatch and AltMatch microhaplotypes:', cnt)
+    print('  # Number of unique RefMatch and AltMatch microhaplotypes:', len(all_alleles))
+    print('  # Number of RefMatch and AltMatch microhaplotypes needing removal:', len(remove))
     return(dup_alleles_lists, remove)
 
 
@@ -54,10 +54,8 @@ def concat_duplicate_allele_readCount(tmp_rename_report, dup_alleles_lists):
     df_concat.insert(0, 'CloneID', cloneID_series)
     df_concat = df_concat.set_index('AlleleID')
 
-    print('\nRunning concat_duplicate_allele_readCount(tmp_rename_report, dup_alleles_lists_noLength, longest_alleles_list)')
-    print('Number of alleles in the original report:', len(df.index))
-    print('Number of unique alleles out of the duplicated ones:', len(df_concat.index))
-    print(df_concat)
+    print('\n# Running concat_duplicate_allele_readCount(tmp_rename_report, dup_alleles_lists_noLength, longest_alleles_list)')
+    print('  # Number of unique alleles out of the duplicated ones:', len(df_concat.index))
     return(df_concat)
 
 
@@ -117,9 +115,9 @@ def remove_duplicate_alleles_in_cutadapt_fasta(cutadapt_fasta, remove_alleles):
         cnt += 1
     inp.close()
     outp.close()
-    print('\nRunning remove_duplicate_alleles_in_cutadapt_fasta(cutadapt_fasta, remove_alleles):')
-    print('Number of alleles in the original fasta file: ', total_seq)
-    print('Number of alleles removed: ', cnt)
+    print('\n# Running remove_duplicate_alleles_in_cutadapt_fasta(cutadapt_fasta, remove_alleles):')
+    print('  # Number of RefMatch and AltMatch in the cutadapt fasta file: ', total_seq)
+    print('  # Number of RefMatch and AltMatch written to the output: ', cnt)
     return(cutadapt_uni_allele_dict)
 
 
@@ -202,4 +200,4 @@ if __name__ == '__main__':
         # 3. update allele sequences
         update_tmp_rename_report(args.tmp_rename_report, remove_alleles, df_concat, refAlt_81bp_allele_dict, cutadapt_uni_allele_dict)
     else:
-        print('\n# No duplicate microhaplotypes found in:', args.cutadapt_fasta)
+        print('\n  # No duplicate microhaplotypes found in:', args.cutadapt_fasta)

@@ -141,6 +141,6 @@ if __name__=='__main__':
     print('pmc', str(dict(list(pmc_dict.items())[0: 5])), len(pmc_dict))
     
     updog_gt = convert_updog_dose_to_gt(args.updog_dose, args.ploidy)
-    print('updog_gt', str(dict(list(updog_gt.items())[0: 2])), len(updog_gt))
+    #print('updog_gt', str(dict(list(updog_gt.items())[0: 2])), len(updog_gt))
     
     convert_dosage2vcf(args.updog_dose, args.new_vcf_header, args.vcf_readCount, hh_dict, bias_dict, od_dict, pmc_dict, updog_gt)
