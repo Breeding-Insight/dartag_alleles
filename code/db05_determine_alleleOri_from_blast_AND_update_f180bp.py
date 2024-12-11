@@ -34,8 +34,8 @@ def get_rev_compliment_fasta(fastaDB, alleles):
         else:
             print('Check')
         line = inp.readline()
-    print('# Number of alleles on PLUS strand: ', plus_count)
-    print('# Number of alleles on MINUS strand: ', len(minus) * 2)
+    print('  # Number of alleles on PLUS strand: ', plus_count)
+    print('  # Number of alleles on MINUS strand: ', len(minus) * 2)
     for marker in minus:
         outp_botloci.write(marker + '\n')
 
@@ -68,14 +68,14 @@ def ext_unique_hits_for_queries(blast):
                 query_cov_inDict = abs(int(alleles[line_array[4]][3]) - int(alleles[line_array[4]][2])) + 1
                 query_cov = abs(int(line_array[3]) - int(line_array[2])) + 1
                 if query_cov > query_cov_inDict:
-                    print('# Update this query: \n', alleles[line_array[4]])
-                    print('# With this one:', line_array)
+                    print('  # Update this query: \n', alleles[line_array[4]])
+                    print('  # With this one:', line_array)
                     alleles[line_array[4]] = line_array
                 elif query_cov == query_cov_inDict:
                     # Compare alignment identity
                     if float(line_array[10]) > float(alleles[line_array[4]][10]):
-                        print('# Update this query: \n', alleles[line_array[4]])
-                        print('# With this one:', line_array)
+                        print('  # Update this query: \n', alleles[line_array[4]])
+                        print('  # With this one:', line_array)
                         alleles[line_array[0]] = line_array
                     else:
                         pass
@@ -85,7 +85,7 @@ def ext_unique_hits_for_queries(blast):
             pass
         line = inp.readline()
     inp.close()
-    print('Number of Ref and Alt alleles: ', len(alleles))
+    print('  # Number of Ref and Alt alleles: ', len(alleles))
     return(alleles)
 
 
@@ -96,14 +96,14 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description="Extract fasta sequences of 3K DArTag panel")
 
     parser.add_argument('blast',
-                        help='BLAST result of 54-bp amplicon sequences to 180 bp flanking sequences')
+                        help='BLAST result of amplicon sequences to 180 bp flanking sequences')
 
     parser.add_argument('fastaDB',
                         help='Allele DB')
 
     args=parser.parse_args()
     
-    print('# Running db05_determine_alleleOri_from_blast_AND_update_f180bp.py on', args.blast)
+    print('  # Running db05_determine_alleleOri_from_blast_AND_update_f180bp.py on', args.blast)
 
     alleles = ext_unique_hits_for_queries(args.blast)
 

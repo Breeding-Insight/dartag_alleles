@@ -310,8 +310,8 @@ def generate_new_db_lut(db_alleleCnt_lut_file, updated_db_allele_cnt, db_allele_
     # alfalfa_allele_db_v1_alleleCnt_lut.txt
     db_alleleCnt_lut_file_array = db_alleleCnt_lut_file.split('_')
     version = int(db_alleleCnt_lut_file_array[-3].replace('v', '')) + 1
-    new_suffix = '_v' + str(version).zfill(3) + '_'
-    outf = re.sub(r'_v\d+_', new_suffix, db_alleleCnt_lut_file)
+    new_suffix = 'v' + str(version).zfill(3)
+    outf = re.sub(r'v\d{3}', new_suffix, db_alleleCnt_lut_file)
     outp_lut = open(outf, 'w')
     for i in updated_db_allele_cnt.keys():
         if i in db_allele_cnt:
@@ -337,7 +337,7 @@ def update_db_allele_fasta(db_allele_fasta, new_alleles_fasta, readme):
     db_allele_fasta_array = re.split("[_|.]", db_allele_fasta)
     version = int(db_allele_fasta_array[-2].replace('v', '')) + 1
     new_suffix = '_v' + str(version).zfill(3)
-    outf = re.sub(r'_v\d+', new_suffix, db_allele_fasta)
+    outf = re.sub(r'_v\d{3}', new_suffix, db_allele_fasta)
     outp_fasta = open(outf, 'w')
     updated_db_allele_fasta = dict(new_alleles_fasta)
     inp = open(db_allele_fasta)

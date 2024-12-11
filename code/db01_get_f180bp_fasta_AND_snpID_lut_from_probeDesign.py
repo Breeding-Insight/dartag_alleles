@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 
-def get_180bp_sequences_and_snpID_lut(probe):
+def get_180bp_sequences_and_snpID_lut(probe, create_snpID_lut):
     inp = open(probe)
     outp_fa = open(probe.replace('.txt', '_f180bp.fa'), 'w')
-    outp_lut = open(probe.replace('.txt', '_snpID_lut.csv'), 'w')
+    if create_snpID_lut == 'Y':
+        outp_lut = open(probe.replace('.txt', '_snpID_lut.csv'), 'w')
+
     header = inp.readline() # header
     # MarkerName      TargetSequence  ReferenceGenome Chrom   Pos     VariantAllelesDef       Required
     # alfalfaRep2vsXJDY1_shared_918   GTTTCATCCGAGT...[A/T]CTCATTGAATC   M_sativa_genome_XinJiangDaYe_set1_v1.fasta      chr1.1  194324  [A/T]   1
@@ -30,12 +32,14 @@ def get_180bp_sequences_and_snpID_lut(probe):
             outp_fa.write('>' + snpID + '|Ref\n' + ref + '\n')
             alt = line_array[1][:left_bracket] + line_array[1][slash + 1: right_bracket] + line_array[1][right_bracket + 1:]
             outp_fa.write('>' + snpID + '|Alt\n' + alt + '\n')
-        outp_lut.write(line_array[0] + ',' + snpID + '\n')
+        if create_snpID_lut == 'Y':
+            outp_lut.write(line_array[0] + ',' + snpID + '\n')
+        else:
+            pass
         line = inp.readline()
     inp.close()
     outp_fa.close()
-    outp_lut.close()
-    print('Number of fasta sequences written out: ', count)
+    print('  # Number of fasta sequences written out: ', count)
 
 
 if __name__=='__main__':
@@ -46,7 +50,12 @@ if __name__=='__main__':
 
     parser.add_argument('probe',
                         help='Probe design file sent to DArT for QC')
+    
+    parser.add_argument('create_snpID_lut',
+                        help='Y or N')
 
     args=parser.parse_args()
+    
+    print('  # Getting 180 bp sequences and creating snpID lookup table')
 
-    get_180bp_sequences_and_snpID_lut(args.probe)
+    get_180bp_sequences_and_snpID_lut(args.probe, args.create_snpID_lut)

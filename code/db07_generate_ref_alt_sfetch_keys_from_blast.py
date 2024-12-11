@@ -39,7 +39,7 @@ def get_sfetch_keys(blast, blast_unique):
                 outp.write('\t'.join([line_array[0], str(start_from), str(end_to), line_array[4]]) + '\n')
                 out_count += 1
             else:
-                print('# This allele does not start alignment from 1, which is probably due to IUPAC codes, will extend x-bp based on the alignment: ', line_array)
+                print('  # This allele does not start alignment from 1, which is probably due to IUPAC codes, will extend x-bp based on the alignment: ', line_array)
                 start_from = int(line_array[6]) - int(line_array[2]) + 1
                 end_to = start_from + 80
                 if end_to > 361:
@@ -47,9 +47,9 @@ def get_sfetch_keys(blast, blast_unique):
                 outp.write('\t'.join([line_array[0], str(start_from), str(end_to), line_array[4]]) + '\n')
                 out_count += 1
         else:
-            print('# Align on minus strand: ', line_array)
+            print('  # Align on minus strand: ', line_array)
     outp.close()
-    print('# Total records written out: ', out_count)
+    print('  # Total records written out: ', out_count)
 
 
 def get_query_unique_hits(blast):
@@ -72,14 +72,14 @@ def get_query_unique_hits(blast):
                     query_cov_inDict = abs(int(blast_unique[line_array[0]][3]) - int(blast_unique[line_array[0]][2])) + 1
                     query_cov = abs(int(line_array[3]) - int(line_array[2])) + 1
                     if query_cov > query_cov_inDict:
-                        print('# Update this query: \n', blast_unique[line_array[0]])
-                        print('# With this one:', line_array)
+                        print('  # Update this query: \n', blast_unique[line_array[0]])
+                        print('  # With this one:', line_array)
                         blast_unique[line_array[0]] = line_array
                     elif query_cov == query_cov_inDict:
                         # Compare alignment identity
                         if float(line_array[10]) > float(blast_unique[line_array[0]][10]):
-                            print('# Update this query: \n', blast_unique[line_array[0]])
-                            print('# With this one:', line_array)
+                            print('  # Update this query: \n', blast_unique[line_array[0]])
+                            print('  # With this one:', line_array)
                             blast_unique[line_array[0]] = line_array
                         else:
                             pass
@@ -97,7 +97,7 @@ def get_query_unique_hits(blast):
     for key, line_array in blast_unique.items():
         # Alignment should be all on the plus strand, check it here
         if int(line_array[6]) > int(line_array[7]):
-            print('# Alignment on MINUS strand: ', line_array)
+            print('  # Alignment on MINUS strand: ', line_array)
         else:
             pass
 
@@ -107,9 +107,9 @@ def get_query_unique_hits(blast):
             alt_count += 1
         else:
             other_count += 1
-    print('# Extract unique hits for queries')
-    print('    # Number of ref blast_unique: ', ref_count)
-    print('    # Number of alt blast_unique: ', alt_count)
+    print('  # Extract unique hits for queries')
+    print('     # Number of ref blast_unique: ', ref_count)
+    print('     # Number of alt blast_unique: ', alt_count)
     return(blast_unique)
 
 
@@ -124,7 +124,7 @@ if __name__=='__main__':
 
     args=parser.parse_args()
     
-    print('# Running db07_generate_ref_alt_sfetch_keys_from_blast.py on', args.blast)
+    print('  # Running db07_generate_ref_alt_sfetch_keys_from_blast.py on', args.blast)
 
     blast_unique = get_query_unique_hits(args.blast)
 

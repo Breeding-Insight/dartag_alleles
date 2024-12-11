@@ -9,6 +9,7 @@ def get_snpID_lut(lut):
         snpID_lut[line_array[0]] = line_array[1]
         line = inp.readline()
     inp.close()
+    print('  #  Number of SNP IDs in the lookup table:', len(snpID_lut))
     return(snpID_lut)
 
 
@@ -34,8 +35,10 @@ def ext_ref_alt_amplicon_seq(report, snpID_lut):
             if old_snpID in snpID_lut:
                 new_markerID = snpID_lut[old_snpID]
             elif old_snpID_lc in snpID_lut:
+                #print("# Lower case:", old_snpID_lc, "is in the lookup table")
                 new_markerID = snpID_lut[old_snpID_lc]
             elif old_snpID_uc in snpID_lut:
+                #print("# Upper case:", old_snpID_lc, "is in the lookup table")
                 new_markerID = snpID_lut[old_snpID_uc]
             else:
                 pass
@@ -48,7 +51,8 @@ def ext_ref_alt_amplicon_seq(report, snpID_lut):
                 if old_snpID not in removed_markers:
                     removed_markers.append(old_snpID)
         line = inp.readline()
-    print('Markers not in lookup table and their associated MADC records are not written to the output:', '\n'.join(removed_markers))
+    print('  # Markers not in lookup table and their associated MADC records are not written to the output:', len(removed_markers))
+    print('    \n'.join(removed_markers))
     inp.close()
     outp_report.close()
 
@@ -67,6 +71,8 @@ if __name__=='__main__':
                         help='Missing allele report with allele name reformatted and unique sample names')
 
     args=parser.parse_args()
+    
+    print('  # Updating SNP IDs in MADC report')
     
     snpID_lut = get_snpID_lut(args.lut)
     
