@@ -19,7 +19,6 @@ def collect_passport_data(plus10hap):
             pass
         line = inp.readline()
     print("# Number of marker loci exceeding 10 microhaplotypes:", len(cloneIDs))
-    print('# Total number of RefMatch and AltMatch that need to be dropped from MADC:', cnt)
     return(cloneIDs)
     
 

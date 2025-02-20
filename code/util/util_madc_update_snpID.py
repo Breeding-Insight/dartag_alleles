@@ -30,9 +30,12 @@ def update_snpID(report, snpID_lut):
             '''
             if '|' in line_array[0]:
                 old_snpID = line_array[0].split('|')[0]
-                new_markerID = snpID_lut[old_snpID]
-                new_alleleID = line_array[0].replace(old_snpID, new_markerID)
-                outp_report.write(new_alleleID + ',' + new_markerID + ',' + ','.join(line_array[2:]) + '\n')
+                if old_snpID in snpID_lut:
+                    new_markerID = snpID_lut[old_snpID]
+                    new_alleleID = line_array[0].replace(old_snpID, new_markerID)
+                    outp_report.write(new_alleleID + ',' + new_markerID + ',' + ','.join(line_array[2:]) + '\n')
+                else:
+                    print(old_snpID, 'not found in lookup table')
             elif line_array[0].startswith('LG'):
                 old_markerID = '_'.join(line_array[0].split('_')[1:-1])
                 new_markerID = snpID_lut[old_markerID]

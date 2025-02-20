@@ -51,38 +51,39 @@ def ext_unique_hits_for_queries(blast):
     alleles = {}
     while line:
         line_array = line.strip().split()
-        query_array = line_array[0].rsplit('_', 1)[0]
-        subject_array = line_array[4]
-        if query_array == subject_array:
-            # Determine the alignment orientation and add a note to the line_array
-            if int(line_array[6]) > int(line_array[7]):
-                line_array.append('-')
-            else:
-                line_array.append('+')
-
-            # Add information to a dictionary and make sure every subject sequence only appear once
-            if line_array[4] not in alleles:
-                alleles[line_array[4]] = line_array
-            else:
-                # Compare length of coverage
-                query_cov_inDict = abs(int(alleles[line_array[4]][3]) - int(alleles[line_array[4]][2])) + 1
-                query_cov = abs(int(line_array[3]) - int(line_array[2])) + 1
-                if query_cov > query_cov_inDict:
-                    print('  # Update this query: \n', alleles[line_array[4]])
-                    print('  # With this one:', line_array)
+        if 'Ref' in line_array[0]:
+            query_array = line_array[0].rsplit('|', 1)[0]
+            subject_array = line_array[4]
+            if query_array == subject_array:
+                # Determine the alignment orientation and add a note to the line_array
+                if int(line_array[6]) > int(line_array[7]):
+                    line_array.append('-')
+                else:
+                    line_array.append('+')
+    
+                # Add information to a dictionary and make sure every subject sequence only appear once
+                if line_array[4] not in alleles:
                     alleles[line_array[4]] = line_array
-                elif query_cov == query_cov_inDict:
-                    # Compare alignment identity
-                    if float(line_array[10]) > float(alleles[line_array[4]][10]):
+                else:
+                    # Compare length of coverage
+                    query_cov_inDict = abs(int(alleles[line_array[4]][3]) - int(alleles[line_array[4]][2])) + 1
+                    query_cov = abs(int(line_array[3]) - int(line_array[2])) + 1
+                    if query_cov > query_cov_inDict:
                         print('  # Update this query: \n', alleles[line_array[4]])
                         print('  # With this one:', line_array)
-                        alleles[line_array[0]] = line_array
+                        alleles[line_array[4]] = line_array
+                    elif query_cov == query_cov_inDict:
+                        # Compare alignment identity
+                        if float(line_array[10]) > float(alleles[line_array[4]][10]):
+                            print('  # Update this query: \n', alleles[line_array[4]])
+                            print('  # With this one:', line_array)
+                            alleles[line_array[0]] = line_array
+                        else:
+                            pass
                     else:
                         pass
-                else:
-                    pass
-        else:
-            pass
+            else:
+                pass
         line = inp.readline()
     inp.close()
     print('  # Number of Ref and Alt alleles: ', len(alleles))
@@ -103,7 +104,7 @@ if __name__=='__main__':
 
     args=parser.parse_args()
     
-    print('  # Running db05_determine_alleleOri_from_blast_AND_update_f180bp.py on', args.blast)
+    print('  # Running db05_determine_alleleOri_from_blast_AND_update_f180bp_v1.py on', args.blast)
 
     alleles = ext_unique_hits_for_queries(args.blast)
 

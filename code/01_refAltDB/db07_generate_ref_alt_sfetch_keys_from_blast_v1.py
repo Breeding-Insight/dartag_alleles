@@ -24,7 +24,7 @@ Generate keys for sfetch
 Ref blast_unique: locate beginning of each allele in 180 bp flanking sequences and extract 81 bp
 Alt, RefMatch, and AltMatch blast_unique: locating the ending of each allele in 180 bp flanking sequences and extract 27 bp on the right hand side of the allele
 '''
-def get_sfetch_keys(blast, blast_unique):
+def get_sfetch_keys(blast, blast_unique, length):
     outp = open(blast + '_sfetchKeys.txt', 'w')
     out_count = 0
     for key, line_array in blast_unique.items():
@@ -32,7 +32,7 @@ def get_sfetch_keys(blast, blast_unique):
         if int(line_array[6]) < int(line_array[7]):
             if int(line_array[2]) == 1:
                 start_from = int(line_array[6])
-                end_to = int(line_array[6]) + 80
+                end_to = int(line_array[6]) + int(length) - 1
                 if end_to > 361:
                     end_to = 361
                 # sftech_key: <newname> <from> <to> <source seqname>
@@ -41,7 +41,7 @@ def get_sfetch_keys(blast, blast_unique):
             else:
                 print('  # This allele does not start alignment from 1, which is probably due to IUPAC codes, will extend x-bp based on the alignment: ', line_array)
                 start_from = int(line_array[6]) - int(line_array[2]) + 1
-                end_to = start_from + 80
+                end_to = start_from + int(length) - 1
                 if end_to > 361:
                     end_to = 361
                 outp.write('\t'.join([line_array[0], str(start_from), str(end_to), line_array[4]]) + '\n')
@@ -122,10 +122,13 @@ if __name__=='__main__':
     parser.add_argument('blast',
                         help='BLAST results of blast_unique against the f180-bp flanking sequences with the same orientation')
 
+    parser.add_argument('length',
+                        help='Length of sequences to be extracted')
+
     args=parser.parse_args()
     
-    print('  # Running db07_generate_ref_alt_sfetch_keys_from_blast.py on', args.blast)
+    print('  # Running db07_generate_ref_alt_sfetch_keys_from_blast_v1.py on', args.blast)
 
     blast_unique = get_query_unique_hits(args.blast)
 
-    get_sfetch_keys(args.blast, blast_unique)
+    get_sfetch_keys(args.blast, blast_unique, args.length)

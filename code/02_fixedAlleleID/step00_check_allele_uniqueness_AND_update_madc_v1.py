@@ -32,23 +32,23 @@ def determine_allele_status(madc, first_sample_column):
                 print('hap 2:', line_array)
                 print('concatenated:', concat)
                 if line_array[2] not in dup_alleles:
-                    dup_alleles[line_array[2]] = [['hap 1'] + alleles[line_array[2]]]
-                    dup_alleles[line_array[2]].append(['hap 2'] + line_array)
+                    dup_alleles[line_array[2]] = ['hap 1'] + alleles[line_array[2]] + ['\n']
+                    dup_alleles[line_array[2]] += (['hap 2'] + line_array + ['\n'])
                 else:
-                    dup_alleles[line_array[2]].append('hap 2' + line_array)
-                dup_alleles[line_array[2]].append(['concatenated'] + line_array[2][:3] + concat)
+                    dup_alleles[line_array[2]] += (['hap 2'] + line_array + ['\n'])
+                dup_alleles[line_array[2]] += (['concatenated'] + line_array[:3] + concat + ['\n'])
                 alleles[line_array[2]] = alleles[line_array[2]][:int(first_sample_column)] + concat
         else:
             pass
         line = inp.readline()
     inp.close()
-    
+
     if dup_alleles != {}:
         print('There are duplicated alleles in this MADC report')
         outf = madc.replace('.csv', '_uniq.csv')
         write_to_output(outf, header, alleles)
 
-        outf_dup = open(madc.replace('.csv', '_dup.csv'), 'w')
+        outf_dup = madc.replace('.csv', '_dup.csv')
         write_to_output(outf_dup, header, dup_alleles)
     else:
         print('There are no duplicated alleles in this MADC report')

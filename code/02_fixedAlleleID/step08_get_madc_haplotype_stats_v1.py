@@ -2,26 +2,37 @@
 # The modified MADC file with unique allele and sample names
 
 
+def determine_missing_data_threshold(df_filterSamples, outp_summary):
+    total_sample = len(df_filterSamples.columns) - 1
+    outp = open(outp_summary, 'w')
+    import datetime
+    now = datetime.datetime.now()
+    outp.write('#Processed on ' + str(now) + '\n')
+
+    # Threshold for missing data changed from % to integers on 2024.12.13 based on Shufen's findings in pecan validation project
+    # Calculate 5% of the total sample count
+    miss5per_sample_cnt = int(total_sample * 0.05)
+    if miss5per_sample_cnt >= 10:
+        threshold = 10
+        outp.write('# Only microhaplotypes that have at least 10 samples with 2 or more reads each are considered for calcuating microhaplotype count\n\n')
+    else:
+        threshold = miss5per_sample_cnt
+        outp.write('# Total number of samples:' + str(total_sample) + '\n# Only microhaplotypes that have at least 5% samples with 2 or more reads each are considered for calcultating microhaplotype count\n\n')
+    outp.close()
+    return (threshold)
+
+
 def get_allele_counts(report, df_filterSamples, hap_threshold):
     import pandas as pd
     grouped_df = df_filterSamples.groupby('CloneID')
     df_mono = pd.DataFrame()
     df_10plus = pd.DataFrame()
+    df_missing = pd.DataFrame()
     alleleCnt = {}
-    total_sample = len(df_filterSamples.columns) - 1
-    outp_summary = open(report.replace(".csv", "_hapCnt_summary.csv"), 'w')
-    import datetime
-    now = datetime.datetime.now()
-    outp_summary.write('#Processed on ' + str(now) + '\n')
-
-    threshold_10samples = round(10.0 / total_sample * 100, 2)
-    if threshold_10samples < 5:
-        threshold = 100 - threshold_10samples
-        outp_summary.write('# Use threshold of at least 10 samples for which each sample having a minimum of 2 reads per microhaplotype: ' + str(threshold) + '\n')
-    else:
-        threshold = 95
-        outp_summary.write('# Total number of samples:' + str(total_sample) + '\n# Use threshold of at least 5% samples for which each sample having a minimum of 2 reads per microhaplotype\n')
-
+    summary = report.replace(".csv", "_hapCnt_summary.csv")
+    # Call the function to determine the threshold for missing data
+    threshold = determine_missing_data_threshold(df_filterSamples, summary)
+    
     for marker, group in grouped_df:
         group = group.drop(['CloneID'], axis=1)
         group = group.astype(int)
@@ -30,11 +41,13 @@ def get_allele_counts(report, df_filterSamples, hap_threshold):
         # AlleleID  Chr04_007050770|Ref_0001  Chr04_007050770|Alt_0002
         # 95-145                         285                         0 
         for column in group_t:
-            columnSeriesObj = len(group_t[group_t[column] < 2])
-            missing = columnSeriesObj/total_sample * 100
-            if missing >= threshold:
+            # group_t[column] is a Series
+            data_cnt = len(group_t[group_t[column] >= 2])
+            if data_cnt < threshold:
                 # Note that this will drop Ref and Alt too
                 group.drop(column, inplace=True)
+                df_miss_hap = group_t[column].to_frame().T
+                df_missing = pd.concat([df_missing, df_miss_hap])
             else:
                 pass
 
@@ -49,13 +62,18 @@ def get_allele_counts(report, df_filterSamples, hap_threshold):
             alleleCnt[len(group.index)] = 1
         else:
             alleleCnt[len(group.index)] += 1
-
+    
     outp_mono = report.replace('.csv', '_monoLoci.csv')
     df_mono.to_csv(outp_mono)
+    outp_miss = report.replace('.csv', '_missingHaps.csv')
+    print('# After removing samples with >=95% missing data, the number of microhaplotypes with data in <10 samples:', len(df_missing.index))
+    
+    df_missing.to_csv(outp_miss)
     suffix = "_" + str(hap_threshold) + "plusHaps.csv"
     outp_10plus = report.replace(".csv", suffix)
     df_10plus.to_csv(outp_10plus)
 
+    outp_summary = open(report.replace(".csv", "_hapCnt_summary.csv"), 'a')
     for i in range(0, 10):
         if i not in alleleCnt:
             alleleCnt[i] = 0
@@ -71,7 +89,7 @@ def get_allele_counts(report, df_filterSamples, hap_threshold):
     outp_summary.write(str('>10') + ',' + str(ten_plus) + '\n')
 
 
-def get_marker_missing_rate_and_filter(df, df_sum):
+def cal_sample_missing_and_filter(report, df, df_sum):
     ## Missing markers per sample
     sample_miss_marker_rate = {}
     marker_count = len(df_sum.index)
@@ -101,6 +119,7 @@ def get_marker_missing_rate_and_filter(df, df_sum):
     print('# Total samples: ', len(sample_miss_marker_rate), '\n# Number of samples with ≥95% missing data (remove from the report):', len(remove_samples))
     print('# Remove samples with high missing data:\n', remove_samples, '\n')
     df_filterSamples = df[['CloneID'] + keep_samples]
+    df_filterSamples.to_csv(report.replace('.csv', '_hapInter.csv'), index=True)
     return (df_filterSamples)
 
 
@@ -146,6 +165,6 @@ if __name__=='__main__':
 
     df, df_sum = convert_read_count_to_df_and_preprocess_df(args.report)
 
-    df_filterSamples = get_marker_missing_rate_and_filter(df, df_sum)
+    df_filterSamples = cal_sample_missing_and_filter(args.report, df, df_sum)
     
     get_allele_counts(args.report, df_filterSamples, int(args.hap_threshold))
