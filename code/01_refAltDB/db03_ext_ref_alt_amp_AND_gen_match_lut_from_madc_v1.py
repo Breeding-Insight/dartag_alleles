@@ -4,8 +4,11 @@ def ext_ref_alt_amplicon_seq(report):
     inp = open(report)
     line = inp.readline()
     outp_fasta = open(report.replace('.csv', '_ref_alt_amplicons.fa'), "w")
+    outp_iupac = open(report.replace('.csv', '_iupac.csv'), "w")
+    cnt = 0
     marker_list = []
     outp_lut = open(report.replace('.csv', '_matchCnt_lut.txt'), 'w')
+    iupac = {'R': 'AG', 'Y': 'CT', 'S': 'GC', 'W': 'AT', 'K': 'GT', 'M': 'AC', 'B': 'CGT', 'D': 'AGT', 'H': 'ACT', 'V': 'ACG', 'N': 'ACGT'}
     while line:
         line_array = line.strip().split(',')
         if line_array[0] == '' or line_array[0] =='*' or line_array[0] == 'AlleleID':
@@ -15,9 +18,19 @@ def ext_ref_alt_amplicon_seq(report):
             VaccDscaff11_001337505|Ref
             VaccDscaff11_001337505|Alt
             '''
+            iupac_code = False
             if line_array[0].endswith('Ref'):
                 allele_ID = line_array[0] + '_0001'
                 outp_fasta.write('>' + allele_ID + '\n' + line_array[2] + '\n')
+                for key in iupac:
+                    if key in line_array[2]:
+                        iupac_code = True
+                    else:
+                        pass
+                
+                if iupac_code:
+                    outp_iupac.write(line_array[0] + '\t' + line_array[2] + '\n')
+                    cnt += 1
             elif line_array[0].endswith('Alt'):
                 allele_ID = line_array[0] + '_0002'
                 outp_fasta.write('>' + allele_ID + '\n' + line_array[2] + '\n')
@@ -37,6 +50,8 @@ def ext_ref_alt_amplicon_seq(report):
     inp.close()
     outp_fasta.close()
     outp_lut.close()
+    outp_iupac.close()
+    print('  # Number of marker loci containng IUPAC codes: ', cnt)
 
 
 

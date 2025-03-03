@@ -16,8 +16,6 @@ def determine_allele_status(cutadapt_fasta):
         else:
             all_alleles[seq] = [record]
     
-    outp_dup = open(cutadapt_fasta.replace('.fa', '_dup.csv'), 'w')
-    outp_dup.write('Keep,Remove\n')
     dup_alleles_lists = []
     for seq in all_alleles:
         dup_alleles = []
@@ -25,10 +23,17 @@ def determine_allele_status(cutadapt_fasta):
             for record in all_alleles[seq]:
                 dup_alleles.append(record.id)
             dup_alleles_lists.append(dup_alleles)
-            outp_dup.write(','.join(dup_alleles) + '\n')
         else:
             pass
-    outp_dup.close()
+    
+    if len(dup_alleles_lists) > 0:  # Updated on 3/3/25
+        outp_dup = open(cutadapt_fasta.replace('.fa', '_dup.csv'), 'w')
+        outp_dup.write('Keep,Remove\n')
+        for i in dup_alleles_lists:
+            outp_dup.write(','.join(i) + '\n')
+        outp_dup.close()
+    else:
+        pass
     print('  # Number of RefMatch and AltMatch microhaplotypes:', cnt)
     print('  # Number of unique RefMatch and AltMatch microhaplotypes:', len(all_alleles))
     print('  # Number of RefMatch and AltMatch microhaplotypes needing removal:', len(remove))

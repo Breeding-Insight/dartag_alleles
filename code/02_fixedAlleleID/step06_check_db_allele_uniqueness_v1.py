@@ -55,7 +55,6 @@ def remove_duplicate_alleles_in_db_fasta(db_fasta, remove_alleles):
     os.system(cmd)
     
     inp = open(db_fasta)
-    outp = open(db_fasta.replace('.fa', '_unique.fa'), 'w')
     line = inp.readline()
     remove = 'false'
     cnt = 0
@@ -87,7 +86,7 @@ def remove_duplicate_alleles_in_db_fasta(db_fasta, remove_alleles):
     outp_readme.write('Output db fasta: ' + outf + '\n')
     outp_readme.write('Number of duplicate alleles removed: ' + str(len(remove_alleles)) + '\n')
     outp_readme.write('Number of alleles in the input db fasta file: ' + str(total_seq) + '\n')
-    outp_readme.write('Number of alleles in the output db fasta file: ' + str(total_seq - len(remove_alleles)) + '\n')
+    outp_readme.write('Number of alleles in the output db fasta file: ' + str(int(total_seq) - len(remove_alleles)) + '\n')
 
 
 if __name__ == '__main__':

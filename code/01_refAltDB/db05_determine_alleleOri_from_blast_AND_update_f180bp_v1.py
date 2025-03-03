@@ -2,6 +2,8 @@
 
 def rev_complement(seq):
     complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+    # IUPAC codes and their complements in a dict
+    complement.update({'R': 'Y', 'Y': 'R', 'S': 'S', 'W': 'W', 'K': 'M', 'M': 'K', 'B': 'V', 'V': 'B', 'D': 'H', 'H': 'D', 'N': 'N'})
     seq_rev = "".join(complement.get(base, base) for base in reversed(seq.upper()))
     return(seq_rev)
 
@@ -34,8 +36,8 @@ def get_rev_compliment_fasta(fastaDB, alleles):
         else:
             print('Check')
         line = inp.readline()
-    print('  # Number of alleles on PLUS strand: ', plus_count)
-    print('  # Number of alleles on MINUS strand: ', len(minus) * 2)
+    print('  # Number of marker loci on PLUS strand: ', int(plus_count/2))
+    print('  # Number of marker loci on MINUS strand: ', len(minus))
     for marker in minus:
         outp_botloci.write(marker + '\n')
 
@@ -45,14 +47,15 @@ def get_rev_compliment_fasta(fastaDB, alleles):
 
 
 def ext_unique_hits_for_queries(blast):
-    # VaccDscaff11_000042737|Ref_0001    54  1    54  VaccDscaff11_000042737|Ref  361     210     157     54  100     100.000 3.63e-25
+    # VaccDscaff11_000042737|Ref_0001    54  1  54  VaccDscaff11_000042737|Ref  361     210     157     54  100     100.000 3.63e-25
+    # chr05_004488015|Ref_0001	         81	 1	81	chr05_004488021|Ref	        301	    181	    101	    81	100	    100.000	4.93e-41
     inp = open(blast)
     line = inp.readline()
     alleles = {}
     while line:
         line_array = line.strip().split()
-        if 'Ref' in line_array[0]:
-            query_array = line_array[0].rsplit('|', 1)[0]
+        if 'Ref' in line_array[0] or 'Alt' in line_array[0]:
+            query_array = line_array[0].rsplit('_', 1)[0]
             subject_array = line_array[4]
             if query_array == subject_array:
                 # Determine the alignment orientation and add a note to the line_array

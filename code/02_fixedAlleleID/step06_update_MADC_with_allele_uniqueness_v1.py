@@ -33,7 +33,7 @@ def update_madc_alleleID_and_seq_after_remove_db_duplicates(remove_keep_pairs, m
             else:
                 print(value, 'is not in the report')
     if drop == 'true':
-        outf = madc_cleaned.replace('.csv', '_updateDupID.csv')
+        outf = madc_cleaned.replace('.csv', '_rmDup.csv')
         df.to_csv(outf)
     else:
         print('No duplicate microhaplotypes in the MADC\n\n')
