@@ -56,7 +56,6 @@ MATCH_ALLELES=${REPORT_SNPID%????}'_match.fa'
 
 
 printf "\n#  4). Remove adapters using cutadapt"
-printf "\n  # Note that some microhaplotypes may be shorter than 81 bp after removing adaptor, thus dropped"
 #  -n COUNT, --times COUNT
 #                        Remove up to COUNT adapters from each read. Default: 1
 #  -O MINLENGTH, --overlap MINLENGTH
@@ -82,7 +81,7 @@ else
     printf "\n#  5). Check if there are duplicate alleles after removing adapters AND update allele sequences and read counts\n"
     printf "  # CUTADAPT file: $CUTADAPT\n"
     printf "  # Temporary rename file: $TMP_RENAME\n"
-    python $SCRIPTS_DIR/step03_check_cutadapt_allele_uniqueness_AND_update_tmp_rename_report_v1.py $CUTADAPT $ALLELE_DB_DIR/$ALLELE_DB $TMP_RENAME
+    python $SCRIPTS_DIR/step03_check_cutadapt_allele_uniqueness_AND_update_tmp_rename_report_v1.1.py $CUTADAPT $ALLELE_DB_DIR/$ALLELE_DB $TMP_RENAME
 fi
 
 
@@ -115,12 +114,7 @@ fi
 MADC_CLEANED=${REPORT_SNPID%????}'_rename_updatedSeq.csv'
 
 
-printf "\n#  8). Add version of the script to the MADC with fixed allele IDs\n"
-MADC_CLEANED_VER=${REPORT_SNPID%????}'_rename_updatedSeq_'$CODE_VER'.csv'
-awk -v val="$CODE_VER" 'NR==1{print "Code_version," $0} NR>1{print val "," $0}' $MADC_CLEANED > $MADC_CLEANED_VER
-
-
-printf "\n#  9). Check if there is a new version DB\n"
+printf "\n#  8). Check if there is a new version DB\n"
 # If there are new alleles added to the db, a new version of db will be generated
 # Otherwise, no new db
 VER=$(echo $ALLELE_DB | grep -o 'v[0-9]\{3\}' | cut -c2- | sed 's/^0*//')
@@ -131,20 +125,30 @@ if test -f "$ALLELE_DB_DIR/$ALLELE_DB_NEW"; then
     printf "  $ALLELE_DB_DIR/$ALLELE_DB_NEW\n"
     makeblastdb -in $ALLELE_DB_DIR/$ALLELE_DB_NEW -dbtype nucl
     
-    printf "\n#  10). Check if there are duplicates."
+    printf "\n#  9). Check if there are duplicates."
     printf "  # If there are duplicates, retain only one allele of the duplicated ones\n"
     #cat $ALLELE_DB_NEW_BLAST | awk '$1!=$5 && $10==100 && $11==100.0' | more
     python $SCRIPTS_DIR/step06_check_db_allele_uniqueness_v1.py $ALLELE_DB_DIR/$ALLELE_DB_NEW
     
-    printf "\n#  11). If there are duplicates in the new version DB, update MADC after removing duplicated alleles in db\n"
+    printf "\n#  10). If there are duplicates in the new version DB, update MADC after removing duplicated alleles in db\n"
     DUP=$ALLELE_DB_DIR/$ALLELE_DB_NEW'.dup.csv'
-    MADC_CLEANED_ID=${REPORT_SNPID%????}'_rename_updatedSeq_updatedDupID.csv'
     if test -f "$DUP"; then
+      VER=$(echo $ALLELE_DB | grep -o 'v[0-9]\{3\}' | cut -c2- | sed 's/^0*//')
+      NEW_VER_RMDUP=$(printf '%03d' $(($VER+2)))
+      ALLELE_DB_NEW_RMDUP=${ALLELE_DB%??????}$NEW_VER_RMDUP'.fa'
+      makeblastdb -in $ALLELE_DB_DIR/$ALLELE_DB_NEW_RMDUP -dbtype nucl
       printf "  # There are duplicate alleles in db. Check if these duplicate alleles are in MADC file.\n"
       python $SCRIPTS_DIR/step06_update_MADC_with_allele_uniqueness_v1.py $DUP $MADC_CLEANED
+      printf "\n#  11). Add version of the script to the MADC with fixed allele IDs\n"
+      MADC_CLEANED_RMDUP=${REPORT_SNPID%????}'_rename_updatedSeq_rmDup.csv'
+      MADC_CLEANED_RMDUP_VER=${REPORT_SNPID%????}'_rename_updatedSeq_rmDup_'$CODE_VER'.csv'
+      awk -v val="$CODE_VER" 'NR==1{print "Code_version," $0} NR>1{print val "," $0}' $MADC_CLEANED_RMDUP > $MADC_CLEANED_RMDUP_VER
     else
       printf "  # No duplicate alleles found in microhap db\n"
       echo $ALLELE_DB_DIR/$ALLELE_DB_NEW
+      printf "\n#  11). Add version of the script to the MADC with fixed allele IDs\n"
+      MADC_CLEANED_VER=${REPORT_SNPID%????}'_rename_updatedSeq_'$CODE_VER'.csv'
+      awk -v val="$CODE_VER" 'NR==1{print "Code_version," $0} NR>1{print val "," $0}' $MADC_CLEANED > $MADC_CLEANED_VER
     fi 
 else
     printf "  # No new alleles found, therefore, no new db generated.\n"

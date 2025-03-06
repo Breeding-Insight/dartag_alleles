@@ -61,10 +61,11 @@ def pre_ref_alt_flankSeq(flank, ref_alt_bases, flank_len, outf):
                 elif ref_in_flank == alt:
                     # There is a special case in the potato panel where the ref and alt bases are swapped
                     # For the microhap db, will use the probe design file as the reference
-                    outp.write('>' + key + '|Ref\n' + value[:int(flank_len)] + alt + value[int(flank_len) + 1:] + '\n')
+                    outp.write('>' + key + '|Ref\n' + value[:int(flank_len)] + ref + value[int(flank_len) + 1:] + '\n')
                     outp.write('>' + key + '|Alt\n' + value + '\n')
-                    print('\nRef and alt swapped:', key, ref_in_flank, ref)
-                    print(key, ref_in_flank, ref_alt_bases[key])
+                    print('\n# Ref and alt swapped:', key)
+                    print('  # Ref in flank sequence:', ref_in_flank)
+                    print('  # Ref in probe design file:', ref, ref_alt_bases[key])
                 else:
                     print('\nmiss', key, ref_in_flank, ref)
                     print(key, ref_in_flank, ref_alt_bases[key])
