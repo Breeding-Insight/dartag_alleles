@@ -205,8 +205,12 @@ if test -f "$ALLELE_DB_DIR/$ALLELE_DB_NEW"; then
         printf "  # No duplicate alleles found in microhap db\n"
         echo $ALLELE_DB_DIR/$ALLELE_DB_NEW
         printf "\n#  11). Add version of the script to the MADC with fixed allele IDs\n"
-        MADC_NO_DUP_VER=${REPORT_SNPID%????}'_rename_'$CODE_VER'.csv'
-        awk -v val="$CODE_VER" 'NR==1{print "Code_version," $0} NR>1{print val "," $0}' $MADC_NO_DUP > $MADC_NO_DUP_VER
+        if test -f "$CUTADAPT_UNI"; then
+            MADC_CLEANED_VER=${REPORT_SNPID%????}'_rename_updatedSeq_'$CODE_VER'.csv'
+        else
+            MADC_CLEANED_VER=${REPORT_SNPID%????}'_rename_'$CODE_VER'.csv'
+        fi
+        awk -v val="$CODE_VER" 'NR==1{print "Code_version," $0} NR>1{print val "," $0}' $MADC_CLEANED > $MADC_CLEANED_VER
         printf "  # Version added to as the first column of the output file.\n"
     fi
 
