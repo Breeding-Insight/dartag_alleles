@@ -24,28 +24,61 @@ Generate keys for sfetch
 Ref blast_unique: locate beginning of each allele in 180 bp flanking sequences and extract 81 bp
 Alt, RefMatch, and AltMatch blast_unique: locating the ending of each allele in 180 bp flanking sequences and extract 27 bp on the right hand side of the allele
 '''
-def get_sfetch_keys(blast, blast_unique, length):
+
+def get_ref_alt_bases(marker_lut):
+    '''
+    Added this function to consider the case of Indels
+    Get reference and alternate bases for each markerID
+    # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    -	   AGC	Indel
+    # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	-	Indel
+    [       0                               1             2               3    4        5      6]
+    '''
+    inp = open(marker_lut, 'r')
+    line = inp.readline()
+    ref_alt_bases={}
+    while line:
+        line_array = line.strip().split(',')
+        ref_alt_bases[line_array[1]] = [line_array[4], line_array[5]]
+        line = inp.readline()
+    inp.close()
+    return ref_alt_bases
+
+
+def get_sfetch_keys(blast, blast_unique, length, ref_alt_bases):
     outp = open(blast + '_sfetchKeys.txt', 'w')
     out_count = 0
     for key, line_array in blast_unique.items():
+        # chr1_000042737|Ref_0001    54      1    54      chr1_000042737|Ref      361     210     157     54      100     100.000 3.63e-25
         # Confirm plus strand alignment
         if int(line_array[6]) < int(line_array[7]):
             if int(line_array[2]) == 1:
                 start_from = int(line_array[6])
                 end_to = int(line_array[6]) + int(length) - 1
-                if end_to > 361:
-                    end_to = 361
-                # sftech_key: <newname> <from> <to> <source seqname>
-                outp.write('\t'.join([line_array[0], str(start_from), str(end_to), line_array[4]]) + '\n')
-                out_count += 1
             else:
                 print('  # This allele does not start alignment from 1, which is probably due to IUPAC codes, will extend x-bp based on the alignment: ', line_array)
                 start_from = int(line_array[6]) - int(line_array[2]) + 1
                 end_to = start_from + int(length) - 1
-                if end_to > 361:
-                    end_to = 361
-                outp.write('\t'.join([line_array[0], str(start_from), str(end_to), line_array[4]]) + '\n')
-                out_count += 1
+
+            # Alternative alleles of Indels should be handled differently from SNPs
+            snpID = line_array[0].rsplit('|', 1)[0]
+            ref = ref_alt_bases[snpID][0]
+            alt = ref_alt_bases[snpID][1]
+            if 'Alt' in line_array[0]:
+                # Ref: AAAAA  TTTTT
+                #      |||||  |||||
+                # Alt: AAAAAGCTTTTT
+                if ref == '-':
+                    end_to = int(line_array[6]) + int(length) - 1 + len(alt)
+                elif alt == '-':
+                    end_to = int(line_array[6]) + int(length) - 1 - len(ref)
+                else:
+                    pass
+            else:
+                pass
+     
+            # sftech_key: <newname> <from> <to> <source seqname>
+            outp.write('\t'.join([line_array[0], str(start_from), str(end_to), line_array[4]]) + '\n')
+            out_count += 1
         else:
             print('  # Align on minus strand: ', line_array)
     outp.close()
@@ -119,16 +152,21 @@ if __name__=='__main__':
 
     parser=argparse.ArgumentParser(description="Extract fasta sequences of 3K DArTag panel")
 
+    parser.add_argument('marker_lut',
+                        help='Marker lookup table containing ref and alt bases')
+    
     parser.add_argument('blast',
                         help='BLAST results of blast_unique against the f180-bp flanking sequences with the same orientation')
 
     parser.add_argument('length',
-                        help='Length of sequences to be extracted')
+                        help='DArT provides different sequence lengths, try to set up longer Ref/Alt sequences to be proactive for increasing sequence length from DArT (109 bp as of Mar 2025)')
 
     args=parser.parse_args()
     
-    print('  # Running db07_generate_ref_alt_sfetch_keys_from_blast_v1.py on', args.blast)
+    print('  # Running db07_generate_ref_alt_sfetch_keys_from_blast_v1.1.py on', args.blast)
+
+    ref_alt_bases = get_ref_alt_bases(args.marker_lut)
 
     blast_unique = get_query_unique_hits(args.blast)
 
-    get_sfetch_keys(args.blast, blast_unique, args.length)
+    get_sfetch_keys(args.blast, blast_unique, args.length, ref_alt_bases)

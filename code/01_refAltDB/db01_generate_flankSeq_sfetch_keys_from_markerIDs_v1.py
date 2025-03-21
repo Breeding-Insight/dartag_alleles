@@ -43,30 +43,26 @@ def get_sfetch_keys(markers, chr_len, flankBP):
     out_count = 0
     inp = open(markers)
     line = inp.readline()
-    # solcap_snp_c2_51460,chr01_000449027,chr01,449027,A,G
+    # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    -	   AGC	Indel
+    # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	-	Indel
     while line:
         line_array = line.strip().split(',')
-        if int(line_array[3]) < int(flankBP):
+        # Deletion in reference allele, don't need to do anything special
+        if line_array[5] == '-':
+            start_from
+            
+            
+        start_from = int(line_array[3]) - int(flankBP)
+        if start_from < 1:
             start_from = 1
-            end_to = int(flankBP)
-            if line_array[2] in chr_len:
-                if end_to > int(chr_len[line_array[2]]):
-                    end_to = int(chr_len[line_array[2]])
-                else:
-                    end_to = int(line_array[3]) + int(flankBP) - 1
-                # sftech_key: <newname> <from> <to> <source seqname>
-                outp.write('\t'.join([line_array[1], str(start_from), str(end_to), line_array[2]]) + '\n')
-                out_count += 1
-        else:
-            start_from = int(line_array[3]) - int(flankBP)
-            end_to = int(line_array[3]) + int(flankBP)
-            if line_array[2] in chr_len:
-                if end_to > int(chr_len[line_array[2]]):
-                    end_to = int(chr_len[line_array[2]])
-                else:
-                    end_to = int(line_array[3]) + int(flankBP)
-                outp.write('\t'.join([line_array[1], str(start_from), str(end_to), line_array[2]]) + '\n')
-                out_count += 1
+        
+        end_to = int(line_array[3]) + int(flankBP)
+        if line_array[2] in chr_len:
+            if end_to > int(chr_len[line_array[2]]):
+                end_to = int(chr_len[line_array[2]])
+                
+                
+ 
         line = inp.readline()
     inp.close()
     outp.close()

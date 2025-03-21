@@ -2,9 +2,11 @@
 
 def get_ref_alt_bases(markerIDs):
     '''
+    Added this function to consider the case of Indels
     Get reference and alternate bases for each markerID
-    snpST00073,chr11_002499502,chr11,2499502,T,C
-    [   0         1             2       3    4 5]
+    # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    -	   AGC	Indel
+    # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	-	Indel
+    [       0                               1             2               3    4        5      6]
     '''
     inp = open(markerIDs, 'r')
     line = inp.readline()
@@ -46,13 +48,14 @@ def pre_ref_alt_flankSeq(flank, ref_alt_bases, flank_len, outf):
             alt = ref_alt_bases[key][1]
             ref_in_flank = value[int(flank_len)]
             if ref == '-':
-                # print('match', ref_in_flank, ref)
+                # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    -	   AGC	Indel
                 outp.write('>' + key + '|Ref\n' + value + '\n')
-                outp.write('>' + key + '|Alt\n' + value[:int(flank_len)] + alt + value[int(flank_len) + 1:] + '\n')
+                outp.write('>' + key + '|Alt\n' + value[:int(flank_len)] + alt + value[int(flank_len):] + '\n')
             elif alt == '-':
-                indel_len = len(ref)
+                # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	-	Indel
+                del_in_alt = len(ref)
                 outp.write('>' + key + '|Ref\n' + value + '\n')
-                outp.write('>' + key + '|Alt\n' + value[:int(flank_len)] + value[int(flank_len) + indel_len:] + '\n')
+                outp.write('>' + key + '|Alt\n' + value[:int(flank_len)] + value[int(flank_len) + del_in_alt:] + '\n')
             else:
                 if ref_in_flank == ref:
                     #print('match', ref_in_flank, ref)

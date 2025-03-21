@@ -69,7 +69,11 @@ def compare(target_snp_amplicon_position_dict, snps_list, ref_record, alt_record
     aln_list = format_alignment(*aln).split("\n")
     # ['GAGGAAAAACACACACTGTATGATTTTGGAAACTCGACATAGGCCTATTGGAGG', '||||||||||||||||||||||||||.|||||||||||||||||||||||||||', 'GAGGAAAAACACACACTGTATGATTTCGGAAACTCGACATAGGCCTATTGGAGG', '  Score=52.5', '']
     aln_score_list = aln_list[3].split("=")
+    
     if float(aln_score_list[1]) > 40.00:
+        if ref_alleleID == 'M6_chr10_48867893_000000225|Ref_0001':
+            print('\n'.join([ref_alleleID, alt_alleleID] + aln_list))
+            
         seqA = aln_list[0]
         match_line = aln_list[1]
         seqB = aln_list[2]
@@ -396,6 +400,7 @@ def generate_vcf(report, uniq_SNPs_df):
         read_count_alt_sum_allSamples_concatVariants = copy.deepcopy(read_count_alt_sum_allSamples)
         read_count_ref_allSamples_sum = {}
         read_count_alt_allSamples_sum = {}
+        print(read_count_ref_sum_allSamples)
         while idx < len(read_count_ref_sum_allSamples):
             snp_keys = list(read_count_ref_sum_allSamples)
             # If it's a biallelic SNP
