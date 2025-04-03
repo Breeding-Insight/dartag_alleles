@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-def cal_maf_aaf_obHet(dosage):
+def cal_maf_aaf_obHet(vcf):
+    # chr01	449004	chr01_000449004	C	T	.	.	DP=16684;ADS=6840,9844	DP:RA:AD	0:0:0,0	0:0:0,0	0:0:0,0	0:0:0,0	0:0:0,0	0:0:0,0	165:101:101,64	
     # updog dosage calls with missing data denoted as NA
     inp = open(dosage)
     header = inp.readline()
@@ -18,9 +19,8 @@ def cal_maf_aaf_obHet(dosage):
             dose_noNA = [x for x in line_array[1:] if x != 'NA']
         else:
             dose_noNA = line_array[1:]
-        
         # Alternative allele frequency
-        alt_allele_cnt = dose_noNA.count('0') + dose_noNA.count('1')
+        alt_allele_cnt = dose_noNA.count('0') + dose_noNA.count('1') + dose_noNA.count('2') + dose_noNA.count('3')
         alt_allele_freq = float(alt_allele_cnt)/len(dose_noNA)
         
         # Calculate minor allele frequency
@@ -31,7 +31,7 @@ def cal_maf_aaf_obHet(dosage):
         minor_allele_freq = float(minor_allele_cnt)/len(dose_noNA)
         
         # Calculate observed heterozygosity
-        ob_het = dose_noNA.count('1') + dose_noNA.count('2')
+        ob_het = dose_noNA.count('1') + dose_noNA.count('2') + dose_noNA.count('3')
         ob_het_freq = float(ob_het)/len(dose_noNA)
         outp.write(line_array[0] + ',' + str(round(alt_allele_freq, 3)) + ',' + str(round(minor_allele_freq, 3)) + ',' + str(round(ob_het_freq, 3)) + '\n')
         line = inp.readline()
