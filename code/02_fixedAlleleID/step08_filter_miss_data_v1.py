@@ -27,7 +27,7 @@ def calculate_marker_missing_data(df, outf):
     total_sample = len(df.index)
     if outf != '':
         outp_marker = open(outf, 'w')
-        outp_marker.write('MarkerID,#Samples_missing,#Sample/Total, #Samples_w_data\n')
+        outp_marker.write('MarkerID,Samples_missing,Percent_total,Samples_w_data\n')
     
     for column in df:
         data_count = len(df[df[column] >=10])
@@ -109,10 +109,10 @@ def get_marker_missing_data_rate(report, df_sum, marker_summary):
     nowf = now.strftime("%Y-%m-%d %H:%M:%S")
     outp_marker_summary.write('## ' + nowf + '\n')
     outp_marker_summary.write('# For each marker locus, if >=i% of samples with data (>=10 reads)\n\n')
-    outp_marker_summary.write('Present_in_%sample,#Markers,#Samples\n')
+    outp_marker_summary.write('Present_in_sample,Markers,Samples\n')
 
     # For a single marker, if less than i% of samples with missing data
-    print('Present_in_%sample,#Markers,#Samples')
+    print('Present_in_sample,Markers,Samples')
     for i in range(0, 100, 5):
         # Added this part on 2023.9.19
         if i == 0:
@@ -148,7 +148,7 @@ def get_sample_missing_data_rate_and_filter(report, df_sum):
     ## Missing markers per sample
     sample_miss_marker_rate = {}
     outp_sample = open(report.replace('.csv', '_miss_sample.csv'), 'w')
-    outp_sample.write('Sample_ID,#Markers_missing,#Markers/Total\n')
+    outp_sample.write('Sample_ID,Markers_missing,Percent_total\n')
     marker_count = len(df_sum.index)
     print('# Filtering at sample level')
     print('# Total samples:', len(df_sum.columns))

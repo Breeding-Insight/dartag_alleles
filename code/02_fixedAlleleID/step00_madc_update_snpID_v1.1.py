@@ -3,6 +3,11 @@
 def get_snpID_lut(lut):
     inp = open(lut, encoding='utf-8-sig')
     line = inp.readline()
+    # Check if there is a header line
+    if line.startswith('Panel_markerID'):
+        line = inp.readline()
+    else:
+        pass
     snpID_lut = {}
     while line:
         # alfalfaRep2vsXJDY1_shared_918,chr1.1_000194324
