@@ -22,22 +22,25 @@ def determine_allele_status(madc, first_sample_column):
         
         if header != '':
             line_array = line.strip().split(',')
-            if line_array[2] not in alleles:
-                alleles[line_array[2]] = line_array
+            if 'RefDefined' in line_array[0] or 'AltDefined' in line_array[0]:
+                pass
             else:
-                concat = []
-                for i, j in zip(alleles[line_array[2]][int(first_sample_column) - 1:], line_array[int(first_sample_column) - 1:]):
-                    concat.append(str(int(i) + int(j)))
-                print('hap 1:', alleles[line_array[2]])
-                print('hap 2:', line_array)
-                print('concatenated:', concat)
-                if line_array[2] not in dup_alleles:
-                    dup_alleles[line_array[2]] = ['hap 1'] + alleles[line_array[2]] + ['\n']
-                    dup_alleles[line_array[2]] += (['hap 2'] + line_array + ['\n'])
+                if line_array[2] not in alleles:
+                    alleles[line_array[2]] = line_array
                 else:
-                    dup_alleles[line_array[2]] += (['hap 2'] + line_array + ['\n'])
-                dup_alleles[line_array[2]] += (['concatenated'] + line_array[:3] + concat + ['\n'])
-                alleles[line_array[2]] = alleles[line_array[2]][:int(first_sample_column)] + concat
+                    concat = []
+                    for i, j in zip(alleles[line_array[2]][int(first_sample_column) - 1:], line_array[int(first_sample_column) - 1:]):
+                        concat.append(str(int(i) + int(j)))
+                    print('hap 1:', alleles[line_array[2]])
+                    print('hap 2:', line_array)
+                    print('concatenated:', concat)
+                    if line_array[2] not in dup_alleles:
+                        dup_alleles[line_array[2]] = ['hap 1'] + alleles[line_array[2]] + ['\n']
+                        dup_alleles[line_array[2]] += (['hap 2'] + line_array + ['\n'])
+                    else:
+                        dup_alleles[line_array[2]] += (['hap 2'] + line_array + ['\n'])
+                    dup_alleles[line_array[2]] += (['concatenated'] + line_array[:3] + concat + ['\n'])
+                    alleles[line_array[2]] = alleles[line_array[2]][:int(first_sample_column)] + concat
         else:
             pass
         line = inp.readline()

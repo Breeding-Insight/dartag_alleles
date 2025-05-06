@@ -36,13 +36,13 @@ def get_ref_alt_seq(ref_alt_hap):
 def get_indel_positions(lut):
     # Get the positions of pre-defined indels
     # lut: CDF1.2_chr05_4488015,chr05_004488015,chr05,4488015,-,CACTAGT,Indel,37
-    indel_positions = {}
     # {'chr05_004488015': ['insertion', 7, 37], 'chr05_004488021': ['insertion', 7, 33],...}
     # {'cloneID': ['insertion/deletion', 'length of indel', 'position of indel in DArTag amplicon']}
     inp = open(lut)
     line = inp.readline()
+    line_array = line.strip().split(",")
+    indel_positions = {}
     while line:
-        line_array = line.strip().split(",")
         alleleID = line_array[1]
         if line_array[6] == 'Indel':
             if line_array[4] == '-':
@@ -576,6 +576,9 @@ if __name__=='__main__':
     
     parser.add_argument('lut',
                         help='LUT file, with the first column as the panel marker ID and second column BI_ID')
+    
+    parser.add_argument('has_indel',
+                        help='Y or N, whether there are indels in the marker panel')
 
     parser.add_argument('botloci', help='List of markers on bottom loci of reference genome')
 
@@ -587,8 +590,11 @@ if __name__=='__main__':
     args=parser.parse_args()
     
     ref_alt_seq = get_ref_alt_seq(args.ref_alt_fasta)
-
-    indel_positions = get_indel_positions(args.lut)
+    
+    if args.has_indel == 'Y':
+        indel_positions = get_indel_positions(args.lut)
+    else:
+        indel_positions = {}
 
     new_header_list, target_snp_amplicon_position_dict, snps_list = loop_through_dartag_report(args.report, args.botloci, ref_alt_seq, indel_positions)
 

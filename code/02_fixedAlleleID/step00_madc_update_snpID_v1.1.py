@@ -15,6 +15,7 @@ def get_snpID_lut(lut):
         snpID_lut[line_array[0]] = line_array[1]
         line = inp.readline()
     inp.close()
+    print('Number of SNP IDs in the lookup table:', len(snpID_lut))
     return(snpID_lut)
 
 
