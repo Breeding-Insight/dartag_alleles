@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 def rev_complement(seq):
-    complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+    complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', '-':'-'}
     # IUPAC codes and their complements in a dict
     complement.update({'R': 'Y', 'Y': 'R', 'S': 'S', 'W': 'W', 'K': 'M', 'M': 'K', 'B': 'V', 'V': 'B', 'D': 'H', 'H': 'D', 'N': 'N'})
     seq_rev = "".join(complement.get(base, base) for base in reversed(seq.upper()))
@@ -52,6 +52,7 @@ def ext_unique_hits_for_queries(blast):
     inp = open(blast)
     line = inp.readline()
     alleles = {}
+    # alleles: {'chr08_004336696|Ref', '601', '381', '273', '109', '100', '100.000', '2.13e-57', '-'], 'chr08_004336696|Alt': ['chr08_004336696|Alt_0002', '109', '1', '109', 'chr08_004336696|Alt', '601', '381', '273', '109', '100', '100.000', '2.13e-57', '-'], ...}
     while line:
         line_array = line.strip().split()
         if 'Ref' in line_array[0] or 'Alt' in line_array[0]:
@@ -110,5 +111,5 @@ if __name__=='__main__':
     print('  # Running db05_determine_alleleOri_from_blast_AND_update_f180bp_v1.py on', args.blast)
 
     alleles = ext_unique_hits_for_queries(args.blast)
-
+    
     get_rev_compliment_fasta(args.fastaDB, alleles)

@@ -69,7 +69,7 @@ def get_unique_blast_hits(blast, db_allele_fasta):
             if line_array[0] not in blast_unique:
                 blast_unique[line_array[0]] = line_array
             else:
-                # Compare length of coverage
+                # Compare length of query coverage
                 query_cov_inDict = abs(int(blast_unique[line_array[0]][3]) - int(blast_unique[line_array[0]][2])) + 1
                 query_cov = abs(int(line_array[3]) - int(line_array[2])) + 1
                 if query_cov > query_cov_inDict:
@@ -83,7 +83,18 @@ def get_unique_blast_hits(blast, db_allele_fasta):
                         print('  # With this one:', line_array)
                         blast_unique[line_array[0]] = line_array
                     else:
-                        pass
+                        if int(blast_unique[line_array[0]][5]) != int(line_array[5]):
+                            print('  # Same query coverage but different subject length:', blast_unique[line_array[0]])
+                            print('  # With this one:', line_array)
+                            sub1_qry_diff = int(blast_unique[line_array[0]][5]) - int(blast_unique[line_array[0]][1]) + 1
+                            sub2_qry_diff = int(line_array[5]) - int(line_array[1]) + 1
+                            if sub1_qry_diff > sub2_qry_diff:
+                                print('  # Update this query:', blast_unique[line_array[0]])
+                                print('  # With this one:', line_array)
+                                blast_unique[line_array[0]] = line_array
+                            else:
+                                print('  # Keep this query:', blast_unique[line_array[0]])
+                                print('  # With this one:', line_array)
                 else:
                     pass
         else:

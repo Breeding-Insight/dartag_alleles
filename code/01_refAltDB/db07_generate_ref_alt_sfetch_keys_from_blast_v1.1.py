@@ -29,8 +29,8 @@ def get_ref_alt_bases(marker_lut):
     '''
     Added this function to consider the case of Indels
     Get reference and alternate bases for each markerID
-    # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    -	   AGC	Indel
-    # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	-	Indel
+    # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    A	   AGC	Indel
+    # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	T	Indel
     [       0                               1             2               3    4        5      6]
     '''
     inp = open(marker_lut, 'r')
@@ -38,14 +38,17 @@ def get_ref_alt_bases(marker_lut):
     ref_alt_bases={}
     while line:
         line_array = line.strip().split(',')
-        ref_alt_bases[line_array[1]] = [line_array[4], line_array[5]]
+        if len(line_array) >= 6:
+            ref_alt_bases[line_array[1]] = [line_array[4], line_array[5]]
+        else:
+            pass
         line = inp.readline()
     inp.close()
     return ref_alt_bases
 
 
 def get_sfetch_keys(blast, blast_unique, length, ref_alt_bases):
-    outp = open(blast + '_sfetchKeys.txt', 'w')
+    outp = open(blast + '_' + str(length) + 'bp_sfetchKeys.txt', 'w')
     out_count = 0
     for key, line_array in blast_unique.items():
         # chr1_000042737|Ref_0001    54      1    54      chr1_000042737|Ref      361     210     157     54      100     100.000 3.63e-25
@@ -67,12 +70,20 @@ def get_sfetch_keys(blast, blast_unique, length, ref_alt_bases):
                 # Ref: AAAAA  TTTTT
                 #      |||||  |||||
                 # Alt: AAAAAGCTTTTT
-                if ref == '-':
-                    end_to = int(line_array[6]) + int(length) - 1 + len(alt)
-                elif alt == '-':
-                    end_to = int(line_array[6]) + int(length) - 1 - len(ref)
+                if len(ref) > len(alt):
+                    # deletion in variant
+                    del_bases = len(ref) - len(alt)
+                    end_to = int(line_array[6]) + int(length) - 1 - del_bases
+                elif len(ref) < len(alt):
+                    # insertion in variant
+                    ins_bases = len(alt) - len(ref)
+                    end_to = int(line_array[6]) + int(length) - 1 + ins_bases
                 else:
                     pass
+                
+                if alt == '-':
+                    # single-base deletion
+                    end_to = int(line_array[6]) + int(length) - 1 - 1
             else:
                 pass
      

@@ -12,7 +12,7 @@ def get_snpID_lut(lut):
     return(snpID_lut)
 
 
-def ext_ref_alt_amplicon_seq(report, snpID_lut):
+def update_snpID_and_reformat_ouput(report, snpID_lut):
     inp = open(report)
     line = inp.readline()
     outp_report = open(report.replace('.csv', '_snpID.csv'), 'w')
@@ -54,4 +54,4 @@ if __name__=='__main__':
     
     snpID_lut = get_snpID_lut(args.lut)
     
-    ext_ref_alt_amplicon_seq(args.report, snpID_lut)
+    update_snpID_and_reformat_ouput(args.report, snpID_lut)

@@ -22,8 +22,10 @@ def cal_haplotype_length(report):
     # Get the frequency of each length
     length_freq = df['AlleleSequence'].str.len().value_counts()
     length_freq = length_freq.to_dict()
+    print('haplotype_length', 'count')
     for key, value in length_freq.items():
         outp.write(str(key) + ',' + str(value) + '\n')
+        print(str(key), str(value))
 
 
 

@@ -8,8 +8,10 @@ def determine_amplicon_length(report):
     amp_len_list = []
     while line:
         line_array = line.strip().split(',')
-        if line_array[0] == '' or line_array[0] =='*' or 'AlleleID' in line_array[0]:
+        if line_array[0] == '' or line_array[0] =='*':
             pass
+        elif 'AlleleID' in line_array[0]:
+            samples = line_array[16:]
         else:
             amp_len = len(line_array[2])
             if str(amp_len) not in amp_len_list:
@@ -18,8 +20,11 @@ def determine_amplicon_length(report):
                 pass
         line = inp.readline()
     inp.close()
-    print(amp_len_list)
-    outp_report.write('Amplicon Length:\t' + '\t'.join(amp_len_list) + '\n')
+    print('# Amplicon length:', amp_len_list)
+    print('# Number of Samples:', len(samples))
+    outp_report.write('Amplicon Length:,' + ','.join(amp_len_list) + '\n')
+    outp_report.write('Number of Samples:,' + str(len(samples)) + '\n')
+    outp_report.write('\nSample Names:\n' + '\n'.join(samples) + '\n')
     outp_report.close()
 
 

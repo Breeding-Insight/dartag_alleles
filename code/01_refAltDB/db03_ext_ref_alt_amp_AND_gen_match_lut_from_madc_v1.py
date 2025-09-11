@@ -51,7 +51,7 @@ def ext_ref_alt_amplicon_seq(report):
     outp_fasta.close()
     outp_lut.close()
     outp_iupac.close()
-    print('  # Number of marker loci containng IUPAC codes: ', cnt)
+    print('  # Number of marker loci containing IUPAC codes: ', cnt)
 
 
 

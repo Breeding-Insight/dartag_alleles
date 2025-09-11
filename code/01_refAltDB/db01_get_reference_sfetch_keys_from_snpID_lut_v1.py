@@ -38,20 +38,16 @@ def get_chr_len(chr_len_file):
     return(chr_len)
 
 
-def get_sfetch_keys(markers, chr_len, flankBP):
-    outp = open(markers.replace('.csv', '') + '_f' + flankBP + 'bp_sfetchKeys.txt', 'w')
+def get_sfetch_keys(lut, chr_len, flankBP):
+    outp = open(lut.replace('.csv', '') + '_f' + flankBP + 'bp_sfetchKeys.txt', 'w')
     out_count = 0
-    inp = open(markers)
+    inp = open(lut)
+    header = inp.readline()
+    # Panel_markerID,BI_markerID,  Chr,   Pos, Ref,Alt,Type,Indel_pos,Note
+    # Chr1_02726144,Chr1_002726144,Chr1,2726144,C,  T,  SNP,     ,       1
     line = inp.readline()
-    # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    -	   AGC	Indel
-    # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	-	Indel
     while line:
         line_array = line.strip().split(',')
-        # Deletion in reference allele, don't need to do anything special
-        if line_array[5] == '-':
-            start_from
-            
-            
         start_from = int(line_array[3]) - int(flankBP)
         if start_from < 1:
             start_from = 1
@@ -60,10 +56,9 @@ def get_sfetch_keys(markers, chr_len, flankBP):
         if line_array[2] in chr_len:
             if end_to > int(chr_len[line_array[2]]):
                 end_to = int(chr_len[line_array[2]])
-                
-                
- 
+        outp.write('\t'.join([line_array[1], str(start_from), str(end_to), line_array[2]]) + '\n')
         line = inp.readline()
+        out_count += 1
     inp.close()
     outp.close()
     print('  # Total records written out: ', out_count)
@@ -74,10 +69,10 @@ if __name__=='__main__':
 
     import argparse
 
-    parser=argparse.ArgumentParser(description="Extract fasta sequences of 3K DArTag panel")
+    parser=argparse.ArgumentParser(description="Generate reference genome-based sfetch key file based on snpID lut")
 
-    parser.add_argument('markerIDs',
-                        help='Marker ID in chrxx_000000000 format')
+    parser.add_argument('lut',
+                        help='Marker lut file')
 
     parser.add_argument('chr_len',
                         help='Chromosome length file')
@@ -89,4 +84,4 @@ if __name__=='__main__':
     
     chr_len = get_chr_len(args.chr_len)
     
-    get_sfetch_keys(args.markerIDs, chr_len, args.flankBP)
+    get_sfetch_keys(args.lut, chr_len, args.flankBP)

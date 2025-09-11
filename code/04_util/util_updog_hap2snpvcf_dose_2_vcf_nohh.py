@@ -20,7 +20,6 @@ def determine_genotype(dose, ploidy):
     if dose.isdigit():
         ref_alleles = int(dose)  # number of 0's
         alt_alleles = int(ploidy) - int(dose)  # number of 1's
-    
         # Create genotype string
         gt = '/'.join(['0'] * ref_alleles + ['1'] * alt_alleles)
     else:

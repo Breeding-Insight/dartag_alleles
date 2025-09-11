@@ -7,22 +7,16 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 import vcf
 
-def create_seq_to_ID_dict(madc):
+def create_seq_to_ID_dict(db_fasta):
     # Create a dictionary with sequences as keys and IDs as values
     seq_to_ID = {}
-    inp = open(madc, 'r')
-    line = inp.readline()  # Skip the first line (header)
-    line = inp.readline()  # Read the first sequence line
-    while line:
+    for record in SeqIO.parse(db_fasta, 'fasta'):
         # Get original sequence and its reverse complement
-        line_array = line.strip().split(',')
-        orig_seq =line_array[2].upper()
+        orig_seq = str(record.seq).upper()
         rev_comp = str(Seq(orig_seq).reverse_complement())
         # Store both original and reverse complement sequences with the same ID
-        seq_to_ID[orig_seq] = line_array[0]
-        seq_to_ID[rev_comp] = line_array[0]
-        line = inp.readline()  # Read the next sequence line
-    inp.close()
+        seq_to_ID[orig_seq] = record.id
+        seq_to_ID[rev_comp] = record.id 
     return(seq_to_ID)
 
 
@@ -35,20 +29,7 @@ def get_bottom_loci(botloci):
     return(bottom_loci)
 
 
-def get_sub_sequence(sequence, bottom_loci, targetSNP_ID, first_bp):
-    if targetSNP_ID not in bottom_loci:
-        # Remove the first xx bp from REF sequence
-        # Can't trim the end of the sequence because the variants might be in bases beyond 54 bp
-        sequence = sequence[int(first_bp):]
-    else:
-        # on bottom strand, the REF sequence is reverse complemented
-        # No need to +1 because python list is half-open interval
-        end_bp = len(sequence) - int(first_bp)
-        sequence = sequence[:end_bp]
-    return sequence
-
-
-def update_vcf_info(input_vcf, output_vcf, seq_to_ID, bottom_loci, first_bp):
+def update_vcf_info(input_vcf, output_vcf, seq_to_ID, bottom_loci):
     # Update VCF file by adding sequence IDs to INFO field
     vcf_reader = vcf.Reader(open(input_vcf, 'r'))
     
@@ -72,47 +53,31 @@ def update_vcf_info(input_vcf, output_vcf, seq_to_ID, bottom_loci, first_bp):
         allele_IDs = []
         targetSNP_ID = '.'
         
-        # The coordinates in the VCF file are for the starting positions of the alleles on the top strand of the reference genome
-        # These are computed by polyRAD based on target SNP positions and strand information of the alleles
-        if str(record.REF) in seq_to_ID:
-            allele_ID = seq_to_ID[str(record.REF)]
-            targetSNP_ID = allele_ID.split('|')[0]  # Extract target SNP ID from allele ID
-            record.ID = targetSNP_ID
-            allele_IDs.append(seq_to_ID[str(record.REF)])
-            record.REF = get_sub_sequence(str(record.REF), bottom_loci, targetSNP_ID, first_bp)
+        # Check reference allele
+        ref_seq = str(record.REF).upper()
+        if ref_seq in seq_to_ID:
+            allele_IDs.append(seq_to_ID[ref_seq])
+            targetSNP_ID = seq_to_ID[ref_seq].split('|')[0]
         else:
-            print(f"Warning: REF sequence '{record.REF}' not found in the database. Using '.' as allele ID. {record.CHROM}:{record.POS}")
+            allele_IDs.append('.')
         
-        # Adjust ALT sequences
-        new_alts = []
+        # Check alternate alleles
         if record.ALT:
-            #new_alt = get_sub_sequence(str(record.ALT[0]), bottom_loci, targetSNP_ID, first_bp)
-            #new_alts.append(new_alt)
-            #allele_IDs.append(targetSNP_ID + '|Alt_0002')
-            index = 0
-            while index < len(record.ALT):
-                match_seq = str(record.ALT[index]).upper()
-                if match_seq in seq_to_ID:
-                    allele_IDs.append(seq_to_ID[match_seq])
+            for alt in record.ALT:
+                alt_seq = str(alt).upper()
+                if alt_seq in seq_to_ID:
+                    allele_IDs.append(seq_to_ID[alt_seq])
                 else:
                     allele_IDs.append('.')
-                index += 1
-                match_seq = get_sub_sequence(match_seq, bottom_loci, targetSNP_ID, first_bp)
-                new_alts.append(match_seq)
-            record.ALT = new_alts
 
         # Add all information to INFO field
-        # Adjust position for top strand
-        # No need to adjust position for bottom strand because the trimming is done on the 3' end of the bottom-strand sequence
         record.INFO['targetSNP'] = targetSNP_ID
         if targetSNP_ID in bottom_loci:
             record.INFO['DArTstrand'] = '-'
         else:
             record.INFO['DArTstrand'] = '+'
-            record.POS += int(first_bp)  # Adjust position for top strand
         record.INFO['hapID'] = ','.join(allele_IDs)
         vcf_writer.write_record(record)
-
 
 
 if __name__=='__main__':
@@ -129,9 +94,6 @@ if __name__=='__main__':
     
     parser.add_argument('readdartag_vcf',
                         help='A readme file to add change information')
-    
-    parser.add_argument('first_bp', type=int,
-                        help='The first base pair to use for allele sequence extraction (e.g., 20)')
 
     args=parser.parse_args()
 
@@ -143,4 +105,4 @@ if __name__=='__main__':
     
     # Update VCF file
     outp_vcf = args.readdartag_vcf.replace('.vcf', '_hapIDs.vcf')
-    update_vcf_info(args.readdartag_vcf, outp_vcf, seq_to_ID, bottom_loci, args.first_bp)
+    update_vcf_info(args.readdartag_vcf, outp_vcf, seq_to_ID, bottom_loci)

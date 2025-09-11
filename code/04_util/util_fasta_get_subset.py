@@ -25,7 +25,12 @@ def get_fasta(input, seqIDs, outf):
     while line:
         if line.startswith('>'):
             line_array = line.strip().split()
-            if line_array[0][1:] in seqIDs:
+            if '|' in line_array[0]:
+                seqID_prefix = line_array[0][1:].split('|')[0]  # Get the sequence ID without the '>'
+            else:
+                seqID_prefix = line_array[0][1:]
+            
+            if seqID_prefix in seqIDs:
                 outp.write(line)
                 match = 'true'
             else:

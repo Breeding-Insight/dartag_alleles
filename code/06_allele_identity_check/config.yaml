@@ -1,0 +1,3 @@
+reference: "path/to/reference.fasta"
+samples: ["sample1", "sample2", "sample3"]
+threads: 8

@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 
-def add_pp_info_to_pca(pca, passport):
+def add_pp_info_to_pca(pca, passport, index_colID):
     # The join() function performs a left join by default, so each of the indexes in the first DataFrame are kept.
     import pandas as pd
-    df_pca = pd.read_csv(pca, index_col='Sample_ID')
+    df_pca = pd.read_csv(pca, index_col=index_colID)
     # If sample IDs are pure number, when reading the data, they may be of type of int or str
     df_pca.index = df_pca.index.map(str)
     
-    df_passport = pd.read_csv(passport, index_col='Sample_ID')
+    df_passport = pd.read_csv(passport, index_col=index_colID)
     df_passport = df_passport.dropna(axis=1, how='all')
     df_passport.index = df_passport.index.map(str)
     
@@ -31,7 +31,10 @@ if __name__=='__main__':
 
     parser.add_argument('passport',
                         help='Comm-delimited DArTag reports with sample ID')
+    
+    parser.add_argument('--index_colID', '-i',
+                        help='Column name to be used as index', default='Sample_ID')
 
     args=parser.parse_args()
 
-    add_pp_info_to_pca(args.pca, args.passport)
+    add_pp_info_to_pca(args.pca, args.passport, args.index_colID)

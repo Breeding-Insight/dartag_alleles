@@ -4,9 +4,16 @@ def collect_3K_markerIDs(final3K):
     inp = open(final3K)
     # Chr01_00085461	Chr01	85461
     line = inp.readline()
+    if '\t' in line:
+        delimitor = '\t'
+    elif ',' in line:
+        delimitor = ','
+    else:
+        raise ValueError("Unknown delimiter in the file: {}".format(final3K))
+    
     marker_3K = []
     while line:
-        line_array = line.strip().split()
+        line_array = line.strip().split(delimitor)
         marker_3K.append(line_array[0])
         line = inp.readline()
     inp.close()
@@ -16,12 +23,21 @@ def collect_3K_markerIDs(final3K):
 
 def get_3K_marker_probe(probe, marker_3K):
     inp = open(probe)
-    outp = open(probe.replace('.txt', '_3K.txt'), 'w')
+    if '.txt' in probe:
+        suffix = '.txt'
+        delimitor = '\t'
+    elif '.csv' in probe:
+        suffix = '.csv'
+        delimitor = ','
+    else:
+        raise ValueError("Unknown file format for probe design: {}".format(probe))
+    
+    outp = open(probe.replace(suffix, '_3K' + suffix), 'w')
     line = inp.readline() # header
     outp.write(line)
     line = inp.readline()
     while line:
-        line_array = line.strip().split()
+        line_array = line.strip().split(delimitor)
         if line_array[0] in marker_3K:
             outp.write(line)
         else:

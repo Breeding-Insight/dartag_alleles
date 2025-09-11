@@ -1,10 +1,20 @@
 #!/usr/bin/python3
 
-def get_180bp_sequences_and_snpID_lut(probe, create_snpID_lut):
+def get_flank_sequences_and_snpID_lut(probe, create_snpID_lut):
     inp = open(probe)
-    outp_fa = open(probe.replace('.txt', '_f180bp.fa'), 'w')
+    if probe.endswith('.txt'):
+        outp_fa = open(probe.replace('.txt', '_flank_ref_alt.fa'), 'w')
+        delimiter = '\t'
+    elif probe.endswith('.csv'):
+        outp_fa = open(probe.replace('.csv', '_flank_ref_alt.fa'), 'w')
+        delimiter = ','
+    
+    import os
     if create_snpID_lut == 'Y':
-        outp_lut = open(probe.replace('.txt', '_snpID_lut.csv'), 'w')
+        name_without_extension, _ = os.path.splitext(probe)
+        outp_lut = open(name_without_extension + '_snpID_lut.csv', 'w')
+    else:
+        pass
 
     header = inp.readline() # header
     # MarkerName      TargetSequence  ReferenceGenome Chrom   Pos     VariantAllelesDef       Required
@@ -15,8 +25,9 @@ def get_180bp_sequences_and_snpID_lut(probe, create_snpID_lut):
     count = 0
     while line:
         count += 2
-        line_array = line.strip().split()
+        line_array = line.strip().split(delimiter)
         snpID = line_array[3] + '_' + line_array[4].zfill(9)
+        
         left_bracket = line_array[1].index('[')
         right_bracket = line_array[1].index(']')
         slash = line_array[1].index('/')
@@ -56,6 +67,6 @@ if __name__=='__main__':
 
     args=parser.parse_args()
     
-    print('  # Getting 180 bp sequences and creating snpID lookup table')
+    print('  # Getting flanking sequences and creating snpID lookup table')
 
-    get_180bp_sequences_and_snpID_lut(args.probe, args.create_snpID_lut)
+    get_flank_sequences_and_snpID_lut(args.probe, args.create_snpID_lut)

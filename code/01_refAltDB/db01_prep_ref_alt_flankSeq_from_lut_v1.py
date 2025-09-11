@@ -4,8 +4,10 @@ def get_ref_alt_bases(markerIDs):
     '''
     Added this function to consider the case of Indels
     Get reference and alternate bases for each markerID
-    # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    -	   AGC	Indel
-    # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	-	Indel
+    For indel annotation:
+    # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    T	   TAGC	Indel *coordinate of the anchor base (the one before the insertion
+    # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	T	Indel *coordinate of the anchor base (the one before the deletion)
+    # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    T	   -	Indel *coordinate of the deleted base for single-base deletions in variants
     [       0                               1             2               3    4        5      6]
     '''
     inp = open(markerIDs, 'r')
@@ -13,7 +15,7 @@ def get_ref_alt_bases(markerIDs):
     ref_alt_bases={}
     while line:
         line_array = line.strip().split(',')
-        ref_alt_bases[line_array[1]] = [line_array[4], line_array[5]]
+        ref_alt_bases[line_array[1]] = [line_array[4].upper(), line_array[5].upper()]
         line = inp.readline()
     inp.close()
     return ref_alt_bases
@@ -40,40 +42,62 @@ def get_flankSeq(flankSeq):
     return(flank)
 
 
-def pre_ref_alt_flankSeq(flank, ref_alt_bases, flank_len, outf):
-    outp = open(outf, 'w')
+def pre_ref_alt_flankSeq(flank, ref_alt_bases, flank_len, outf_base):
+    outp = open(outf_base.replace('.fa', '_ref_alt.fa'), 'w')
+    flipped_ref_alt = []
+    flipped_cnt = 0
     for key, value in flank.items():
         if key in ref_alt_bases:
+            # ['CT', 'TA']
             ref = ref_alt_bases[key][0]
             alt = ref_alt_bases[key][1]
-            ref_in_flank = value[int(flank_len)]
-            if ref == '-':
-                # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	    -	   AGC	Indel
-                outp.write('>' + key + '|Ref\n' + value + '\n')
-                outp.write('>' + key + '|Alt\n' + value[:int(flank_len)] + alt + value[int(flank_len):] + '\n')
-            elif alt == '-':
-                # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	-	Indel
-                del_in_alt = len(ref)
-                outp.write('>' + key + '|Ref\n' + value + '\n')
-                outp.write('>' + key + '|Alt\n' + value[:int(flank_len)] + value[int(flank_len) + del_in_alt:] + '\n')
-            else:
+            if len(ref) == len(alt) and alt != '-':
+                ref_in_flank = value[int(flank_len):int(flank_len) + len(ref)].upper()
+                # SNP: include 2 consecutive SNPs
+                # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	T	A	SNP
+                # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TA	CG	SNP
                 if ref_in_flank == ref:
                     #print('match', ref_in_flank, ref)
                     outp.write('>' + key + '|Ref\n' + value + '\n')
-                    outp.write('>' + key + '|Alt\n' + value[:int(flank_len)] + alt + value[int(flank_len) + 1:] + '\n')
+                    outp.write('>' + key + '|Alt\n' + value[:int(flank_len)] + alt + value[int(flank_len) + len(ref):] + '\n')
                 elif ref_in_flank == alt:
                     # There is a special case in the potato panel where the ref and alt bases are swapped
                     # For the microhap db, will use the probe design file as the reference
-                    outp.write('>' + key + '|Ref\n' + value[:int(flank_len)] + ref + value[int(flank_len) + 1:] + '\n')
+                    outp.write('>' + key + '|Ref\n' + value[:int(flank_len)] + ref + value[int(flank_len) + len(ref):] + '\n')
                     outp.write('>' + key + '|Alt\n' + value + '\n')
-                    print('\n# Ref and alt swapped:', key)
-                    print('  # Ref in flank sequence:', ref_in_flank)
-                    print('  # Ref in probe design file:', ref, ref_alt_bases[key])
+                    flipped_ref_alt.append([key, ref_alt_bases[key][0], ref_alt_bases[key][1], ref_in_flank])
+                    flipped_cnt += 1
                 else:
-                    print('\nmiss', key, ref_in_flank, ref)
-                    print(key, ref_in_flank, ref_alt_bases[key])
+                    print('non-matching marker:', key, ref_in_flank, ref_alt_bases[key])
+            else:
+                # Indels
+                if alt == '-':
+                    # single-base deletion in variant
+                    # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	T	-	Indel
+                    del_in_alt = len(ref)
+                    outp.write('>' + key + '|Ref\n' + value + '\n')
+                    outp.write('>' + key + '|Alt\n' + value[:int(flank_len)] + value[int(flank_len) + del_in_alt:] + '\n')
+                elif len(ref) > len(alt):
+                    # multi-base deletion in variant
+                    # OFP20_M6_CDS_290	M6_chr10_48867893_000000441	M6_chr10_48867893	441	TCACGATGT	T	Indel
+                    del_in_alt = len(ref) - len(alt)
+                    outp.write('>' + key + '|Ref\n' + value + '\n')
+                    outp.write('>' + key + '|Alt\n' + value[:int(flank_len) + 1] + value[int(flank_len) + 1 + del_in_alt:] + '\n')
+                elif len(ref) < len(alt):
+                    # insertions in variant
+                    # OFP20_M6_CDS_75	M6_chr10_48867893_000000225	M6_chr10_48867893	225	T	TAGC	Indel
+                    outp.write('>' + key + '|Ref\n' + value + '\n')
+                    outp.write('>' + key + '|Alt\n' + value[:int(flank_len)] + alt + value[int(flank_len) + 1:] + '\n')
     outp.close()
-
+    print('\n# Number of markers with Ref and Alt swapped: ', flipped_cnt)
+    if len(flipped_ref_alt) > 0:
+        outp_flipped = open(outf_base.replace('.fa', '_flippedRefAlt.csv'), 'w')
+        outp_flipped.write('MarkerID,Ref,Alt,FlankSeqBase\n')
+        for marker in flipped_ref_alt:
+            outp_flipped.write(','.join(marker) + '\n')
+        outp_flipped.close()
+    else:
+        print('\n# No Ref and Alt swapped markers found\n')
 
 
 if __name__=='__main__':
@@ -97,5 +121,4 @@ if __name__=='__main__':
 
     flank = get_flankSeq(args.flankSeq)
 
-    outf = args.flankSeq.replace('.fa', '_ref_alt.fa')
-    pre_ref_alt_flankSeq(flank, ref_alt_bases, args.flank_len, outf)
+    pre_ref_alt_flankSeq(flank, ref_alt_bases, args.flank_len, args.flankSeq)

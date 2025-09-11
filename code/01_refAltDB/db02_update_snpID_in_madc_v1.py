@@ -3,14 +3,20 @@
 def get_snpID_lut(lut):
     inp = open(lut, encoding='utf-8-sig')
     line = inp.readline()
+    # Check if there is a header line
+    if line.startswith('Panel_markerID'):
+        line = inp.readline()
+    else:
+        pass
     snpID_lut = {}
     while line:
+        # alfalfaRep2vsXJDY1_shared_918,chr1.1_000194324
         line_array = line.strip().split(',')
         snpID_lut[line_array[0]] = line_array[1]
         line = inp.readline()
     inp.close()
-    print('  #  Number of SNP IDs in the lookup table:', len(snpID_lut))
-    return(snpID_lut)
+    print('Number of SNP IDs in the lookup table:', len(snpID_lut))
+    return (snpID_lut)
 
 
 def ext_ref_alt_amplicon_seq(report, snpID_lut):
@@ -32,6 +38,7 @@ def ext_ref_alt_amplicon_seq(report, snpID_lut):
             old_snpID = line_array[0].split('|')[0]
             old_snpID_lc = old_snpID.lower()
             old_snpID_uc = old_snpID.capitalize()
+            new_markerID = ''
             if old_snpID in snpID_lut:
                 new_markerID = snpID_lut[old_snpID]
             elif old_snpID_lc in snpID_lut:
@@ -42,7 +49,7 @@ def ext_ref_alt_amplicon_seq(report, snpID_lut):
                 new_markerID = snpID_lut[old_snpID_uc]
             else:
                 pass
-                
+
             if len(new_markerID) > 1:
                 new_alleleID = line_array[0].replace(old_snpID, new_markerID)
                 outp_report.write(new_alleleID + ',' + new_markerID + ',' + ','.join(line_array[2:]) + '\n')

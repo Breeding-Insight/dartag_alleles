@@ -18,7 +18,7 @@ def determine_allele_status(db_fasta):
     print('# Number of microhaplotypes:', cnt)
     print('# Number of unique microhaplotypes:', len(all_alleles))
     print('# Number of microhaplotypes need removal:', len(remove))
-
+    print(remove)
     if len(remove) > 0:
         outp_dup = open(db_fasta + '.dup.csv', 'w')
         outp_dup.write('KeepID,Keep_seq,RemoveID,Remove_seq\n')
