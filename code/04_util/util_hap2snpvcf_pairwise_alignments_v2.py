@@ -35,20 +35,28 @@ def get_ref_alt_seq(ref_alt_hap):
     
 def get_indel_positions(lut):
     # Get the positions of pre-defined indels
-    # lut: CDF1.2_chr05_4488015,chr05_004488015,chr05,4488015,-,CACTAGT,Indel,37
-    # {'chr05_004488015': ['insertion', 7, 37], 'chr05_004488021': ['insertion', 7, 33],...}
+    # The Indel definition is based on the reference genome. E.g., compared with reference genome, CDF1.2_chr05_4488015 has an insertion of CACTAGT at position 4488015 on chr05
+    # insertion: CDF1.2_chr05_4488015	chr05_004488015	             chr05	        4488015	     A	   ACACTAGT	Indel	27
+    # deletion: OFP20_M6_CDS_290    M6_chr10_48867893_000000440	M6_chr10_48867893	  440	 ATCACGATGT	 A	    Indel	56
+    # an2.1_C88_C10H2G055580_549  C88_C10H2G055580_399_000000151 C88_C10H2G055580_399 151	      A	     -	    Indel	25
+    #                [0                          1                          2            3        4      5         6    7]
+    # {'chr05_004488015': ['insertion', 7, 37, 'A', 'ATCACGATGT'], 'chr05_004488021': ['insertion', 7, 33],...}
     # {'cloneID': ['insertion/deletion', 'length of indel', 'position of indel in DArTag amplicon']}
     inp = open(lut)
+    header = inp.readline()
     line = inp.readline()
-    line_array = line.strip().split(",")
     indel_positions = {}
     while line:
+        line_array = line.strip().split(",")
         alleleID = line_array[1]
+        # modified on 10/10/2025
         if line_array[6] == 'Indel':
-            if line_array[4] == '-':
-                indel_positions[alleleID] = ['insertion', len(line_array[5]), int(line_array[7]), line_array[4], line_array[5]]
+            if len(line_array[4]) < len(line_array[5]):
+                indel_positions[alleleID] = ['insertion', len(line_array[5]) - 1, int(line_array[7]), line_array[4], line_array[5]]
+            elif len(line_array[4]) > len(line_array[5]): 
+                indel_positions[alleleID] = ['deletion', len(line_array[4]) - 1, int(line_array[7]), line_array[4], line_array[5]]
             else:
-                indel_positions[alleleID] = ['deletion', len(line_array[5]), int(line_array[7]), line_array[4], line_array[5]]
+                indel_positions[alleleID] = ['deletion', len(line_array[4]), int(line_array[7]), line_array[4], line_array[5]]
         line = inp.readline()
     inp.close()
     return(indel_positions)
@@ -91,7 +99,7 @@ def compare(target_snp_amplicon_position_dict, snps_list, ref_record, alt_record
     '''
     
     if float(aln_score_list[1]) > 40.00:
-        if ref_alleleID == 'M6_chr10_48867893_000000225|Ref_0001':
+        if ref_alleleID == 'M6_chr10_48867893_000000440|Ref_0001':
             print('\n'.join([ref_alleleID, alt_alleleID] + aln_list))
             
         seqA = aln_list[0]
@@ -274,19 +282,18 @@ def generate_snp_ref_alt_alleles_dictionary(all_snp_positions_haplotypes, all_al
 #####################
 # generate vcf
 #####################
-def generate_vcf(report, uniq_SNPs_df):
+def generate_vcf(report, uniq_SNPs_df, indel_positions):
     # AlleleID	                         Chromosome	  SNP_position_in_Genome	 Ref	Alt	          CloneID	         DxJ63_1.1_A1
     # VaccDscaff11_000042737|Ref_001	VaccDscaff11         42737	              C	     T	   VaccDscaff11_000042737         63
     uniq_SNPs_df = uniq_SNPs_df.set_index('AlleleID', drop=True)
     
-    outf_vcf = report.replace(".csv", "_snps.vcf")
-    outp = open(outf_vcf, 'a')
+    outf = report.replace(".csv", "_snps.vcf")
+    outp = open(outf, 'a')
     outp.write('\t'.join(['#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT']) + '\t' + '\t'.join(uniq_SNPs_df.columns[5:]) + '\n')
     
     grouped = uniq_SNPs_df.groupby('CloneID') # group rows based on 'CloneID'
-    # Loop through each group/Clone and get the read counts
+    # Loop through each CloneID and get the read counts
     for cloneID, group in grouped:
-        # sort dataframe
         group = group.sort_values(by=['SNP_position_in_Genome'])
 
         ''' 
@@ -332,10 +339,7 @@ def generate_vcf(report, uniq_SNPs_df):
             '''
             # Read count series of all haplotypes of a targeted locus for a sample
             AlleleID
-            VaccDscaff11_000480009|RefMatch_003     0
-            VaccDscaff11_000480009|Ref_001          0
-            VaccDscaff11_000480009|Alt_002         20
-            Name: DxJ40_3.1_F3, dtype: object
+            VaccDscaff11_000480009|RefMatch_003     10
             '''
             import copy
             read_count_ref_sum = copy.deepcopy(snp_ref_alleles)
@@ -384,6 +388,7 @@ def generate_vcf(report, uniq_SNPs_df):
         ==========alt
         {'VaccDscaff11_004129825_AC': [2, 4, 2, 0, 0, 0, 5, 3, 1, 0, 1, 3, 0, 4, 1, 1, 2, 3, 2, 4, 0, 2, ... ]}
         '''
+        
         # Check the number of variants for a given SNP location, i.e., whether it's biallelic or triallelic SNPs
         snp_variant_count = {}
         # snp: 'VaccDscaff11_004129825_AC'
@@ -400,6 +405,7 @@ def generate_vcf(report, uniq_SNPs_df):
         while idx < len(read_count_ref_sum_allSamples):
             snp_keys = list(read_count_ref_sum_allSamples)
             # If it's a biallelic SNP
+            #print(read_count_ref_sum_allSamples)
             if snp_variant_count[snp_keys[idx][:-3]] == 1:
                 count_sum_ref = sum(list(map(int, read_count_ref_sum_allSamples[snp_keys[idx]])))
                 count_sum_alt = sum(list(map(int, read_count_alt_sum_allSamples[snp_keys[idx]])))
@@ -457,7 +463,7 @@ def generate_vcf(report, uniq_SNPs_df):
             count_index = 0
             final_snp_list = list(read_count_ref_sum_allSamples_concatVariants.keys())
             
-            # 'chr_1A_000067801_AT' OR 'chr1A_000067801_AT'
+            # snpID: 'chr_1A_000067801_AT'
             snpID_array = final_snp_list[idx].split('_')
             position = snpID_array[-2]
             locusID = "_".join(snpID_array[:-1])
@@ -470,19 +476,21 @@ def generate_vcf(report, uniq_SNPs_df):
             alt_AD = read_count_alt_allSamples_sum[final_snp_list[idx]]
             # Triallelic SNPs
             if '/' in snpID_array[-1]:
+                # ['chr01', '000067801', 'A/T,G']
                 ref_alt_bases = snpID_array[-1].split('/')
                 alt_AD_array = alt_AD.split(',')
                 DP = ref_AD + int(alt_AD_array[0]) + int(alt_AD_array[1])
                 outp.write('\t'.join([chromsome, str(int(position)), locusID, ref_alt_bases[0], ref_alt_bases[1], '.', '.']) + '\tDP=' + str(DP) + ';ADS=' + str(ref_AD)+','+str(alt_AD) + '\tDP:RA:AD')
             else:
                 DP = ref_AD + alt_AD
-                # Indel
-                if snpID_array[-1].startswith('-'):
-                    ref = snpID_array[-1][0]
-                    alt = snpID_array[-1][1:]
-                elif snpID_array[-1].endswith('-'):
-                    ref = snpID_array[-1][:-1]
-                    alt = snpID_array[-1][-1]
+                # Indel: modified on 10/10/2025
+                # {'chr05_004488015': ['insertion', 7, 37, 'A', 'ATCACGATGT'],...}
+                # {'cloneID': ['insertion/deletion', 'length of indel', 'position of indel in DArTag amplicon', 'ref', 'alt']}
+                markerID = chromsome + '_' + position.zfill(9)
+                if markerID in indel_positions:
+                    ref = indel_positions[markerID][3]
+                    alt = indel_positions[markerID][4]
+                    print('indel:', markerID, 'ref', ref, 'alt:', alt)
                 else:
                     ref = snpID_array[-1][0]
                     alt = snpID_array[-1][1]
@@ -604,4 +612,4 @@ if __name__=='__main__':
 
     add_vcf_header(args.vcf_header, args.report)
 
-    generate_vcf(args.report, uniq_SNPs_df)
+    generate_vcf(args.report, uniq_SNPs_df, indel_positions)

@@ -16,7 +16,7 @@ def create_seq_to_ID_dict(madc):
     while line:
         # Get original sequence and its reverse complement
         line_array = line.strip().split(',')
-        orig_seq =line_array[2].upper()
+        orig_seq = line_array[2].upper()
         rev_comp = str(Seq(orig_seq).reverse_complement())
         # Store both original and reverse complement sequences with the same ID
         seq_to_ID[orig_seq] = line_array[0]
@@ -51,6 +51,9 @@ def get_sub_sequence(sequence, bottom_loci, targetSNP_ID, first_bp):
 def update_vcf_info(input_vcf, output_vcf, seq_to_ID, bottom_loci, first_bp):
     # Update VCF file by adding sequence IDs to INFO field
     vcf_reader = vcf.Reader(open(input_vcf, 'r'))
+
+    # Remove SAMPLE entries from the Reader’s metadata dictionary
+    vcf_reader.metadata.pop('SAMPLE', None)
     
     # Add new INFO field to the header
     # Number can be
@@ -121,22 +124,23 @@ if __name__=='__main__':
 
     parser=argparse.ArgumentParser(description="Generate stats from missing allele count")
 
-    parser.add_argument('db_fasta',
-                        help='Micorhaplotype db fasta file')
+    parser.add_argument('MADC',
+                        help='MADC file with fixed allele IDs and sequences')
 
     parser.add_argument('botloci',
                         help='A file containing the marker loci from the bottom strand')
     
     parser.add_argument('readdartag_vcf',
                         help='A readme file to add change information')
-    
-    parser.add_argument('first_bp', type=int,
-                        help='The first base pair to use for allele sequence extraction (e.g., 20)')
+
+    parser.add_argument('--first_bp', type=int, default=0,
+                        help='The first base pair to use for allele sequence extraction (default: 0)')
 
     args=parser.parse_args()
 
-    # Get reverse complement sequences to capture those alleles on the bottom strand
-    seq_to_ID = create_seq_to_ID_dict(args.db_fasta)
+    # Use sequences as keys and allele IDs as values
+    # Also get reverse complement sequences to capture those alleles on the bottom strand
+    seq_to_ID = create_seq_to_ID_dict(args.MADC)
 
     # Get bottom strand loci
     bottom_loci = get_bottom_loci(args.botloci)

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-def collect_passport_data(plus10hap):
+def collect_passport_data(plus10hap, threshold):
     inp = open(plus10hap, encoding='utf-8-sig')
     header = inp.readline() # header
     line = inp.readline()
@@ -18,14 +18,13 @@ def collect_passport_data(plus10hap):
         else:
             pass
         line = inp.readline()
-    print("# Number of marker loci exceeding 10 microhaplotypes:", len(cloneIDs))
+    print(f"# Number of marker loci exceeding {threshold} microhaplotypes: {len(cloneIDs)}")
     return(cloneIDs)
     
 
-def remove_matchAlleles_with_10plus_haps(report, cloneIDs, plus10hap):
+def remove_matchAlleles_with_10plus_haps(report, cloneIDs, threshold):
     inp = open(report)
-    suffix = '_rm' + plus10hap.split('_')[-1]
-    outp = open(report.replace('.csv', suffix), 'w')
+    outp = open(report.replace('.csv', '_rmHap' + threshold + 'plus.csv'), 'w')
     header = inp.readline()
     outp.write(header)
     line = inp.readline()
@@ -54,13 +53,16 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description="Split MADC report to breeders and only retain haplotypes with more than 10 reads")
 
     parser.add_argument('plus10Loci',
-                        help='A file containing the marker loci with more than 10 microhaplotypes')
+                        help='A file containing the marker loci with more than a threshold of microhaplotypes')
 
     parser.add_argument('report',
                         help='Reformated DArTag report, including fixed alleleIDs')
 
     args=parser.parse_args()
+    
+    # /Users/dz359/PycharmProjects/BI/sweetpotato_dartag_CIP_Uganda/data/DSp23-8909_MADC_rename_hap15plus.csv
+    threshold = args.plus10Loci.split('_')[-1].replace('plus.csv', '').replace('hap', '')
 
-    cloneIDs = collect_passport_data(args.plus10Loci)
+    cloneIDs = collect_passport_data(args.plus10Loci, threshold)
 
-    remove_matchAlleles_with_10plus_haps(args.report, cloneIDs, args.plus10Loci)
+    remove_matchAlleles_with_10plus_haps(args.report, cloneIDs, threshold)

@@ -15,21 +15,25 @@ def calculate_coverage(madc):
 	# For each sample, the coverage is the sum of all the read depths across all alleles for all markers. This provides information on how much sequencing depth or coverage a specific sample received.
 	# Group rows by `CloneID` and calculate the sum of read depths for each marker
 	marker_coverage = df.groupby('CloneID')[sample_columns].sum()
-	marker_coverage['Total_Coverage'] = marker_coverage.sum(axis=1)
+	marker_coverage['Total_coverage'] = marker_coverage.sum(axis=1)
+	marker_coverage['Mean_sample_coverage'] = marker_coverage[sample_columns].mean(axis=1)
 	marker_coverage = marker_coverage.reset_index()
 
 	# Calculate sample-level coverage
 	# Sum read depths across all rows for each sample
 	sample_coverage = df[sample_columns].sum(axis=0)
+	sample_coverage['Mean_marker_coverage'] = df[sample_columns].mean(axis=0)
 
 	# Output the results
 	marker_coverage_file = madc.replace('.csv', '_marker_coverage.csv')
 	marker_coverage.to_csv(marker_coverage_file, index=False)
+	print("Number of samples:", len(sample_columns))
 	print("Marker-Level Coverage:")
 	print(marker_coverage)
 	
 	sample_coverage_file = madc.replace('.csv', '_sample_coverage.csv')
 	sample_coverage.to_csv(sample_coverage_file, header=['Total_Coverage'])
+	print("Number of markers:", len(marker_coverage))
 	print("\nSample-Level Coverage:")
 	print(sample_coverage)
 

@@ -63,13 +63,13 @@ def get_allele_counts(report, df_filterSamples, hap_threshold):
         else:
             alleleCnt[len(group.index)] += 1
     
-    outp_mono = report.replace('.csv', '_monoLoci.csv')
+    outp_mono = report.replace('.csv', '_hapMonoLoci.csv')
     df_mono.to_csv(outp_mono)
-    outp_miss = report.replace('.csv', '_missingHaps.csv')
+    outp_miss = report.replace('.csv', '_hapMiss.csv')
     print('# After removing samples with >=95% missing data, the number of microhaplotypes with data in <10 samples:', len(df_missing.index))
     
     df_missing.to_csv(outp_miss)
-    suffix = "_" + str(hap_threshold) + "plusHaps.csv"
+    suffix = "_hap" + str(hap_threshold) + "plus.csv"
     outp_10plus = report.replace(".csv", suffix)
     df_10plus.to_csv(outp_10plus)
 
@@ -119,7 +119,7 @@ def cal_sample_missing_and_filter(report, df, df_sum):
     print('# Total samples: ', len(sample_miss_marker_rate), '\n# Number of samples with ≥95% missing data (remove from the report):', len(remove_samples))
     print('# Remove samples with high missing data:\n', remove_samples, '\n')
     df_filterSamples = df[['CloneID'] + keep_samples]
-    df_filterSamples.to_csv(report.replace('.csv', '_hapInter.csv'), index=True)
+    #df_filterSamples.to_csv(report.replace('.csv', '_hapInter.csv'), index=True)
     return (df_filterSamples)
 
 

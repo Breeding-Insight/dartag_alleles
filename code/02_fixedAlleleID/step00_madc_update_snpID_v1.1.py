@@ -35,7 +35,7 @@ def update_snpID(report, snpID_lut):
             LG1_alfalfaRep2vsXJDY1_shared_3958_SNP1
             '''
             if '|' in line_array[0]:
-                old_snpID = line_array[0].split('|')[0]
+                old_snpID = line_array[0].rsplit('|', 1)[0]
                 if old_snpID in snpID_lut:
                     new_markerID = snpID_lut[old_snpID]
                     new_alleleID = line_array[0].replace(old_snpID, new_markerID)

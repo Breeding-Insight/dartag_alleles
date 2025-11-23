@@ -26,6 +26,11 @@ def concat_madc(reports, outfile):
     for cloneID, clone_df in df_groupby:
         ref = cloneID + '|Ref_0001'
         alt = cloneID + '|Alt_0002'
+        if alt not in clone_df.index:
+            missing_row = pd.DataFrame(
+                {'CloneID': [cloneID], **{col: 0 for col in clone_df.columns if col != 'CloneID'}}, index=[alt])
+            # Append the missing row to the group
+            clone_df = pd.concat([clone_df, missing_row])
         reindex = [ref, alt]
         idx_sorted = sorted(clone_df.index.to_list())
         for i in idx_sorted:
@@ -42,7 +47,13 @@ def concat_madc(reports, outfile):
         clone_df = clone_df.reindex(reindex)
         df_ordered = pd.concat([df_ordered, clone_df], axis=0)
     df_ordered.fillna(0, inplace=True)
-    df_ordered.to_csv(outfile, index=True)
+    
+    # Add a `Sum` column that computes the sum of all numeric columns except 'CloneID'
+    df_ordered['Presence_count'] = df_ordered.drop(columns=['CloneID']).sum(axis=1)
+    
+    # Reset the index and give it a column name
+    df_ordered = df_ordered.reset_index().rename(columns={'index': 'AlleleID'})
+    df_ordered.to_csv(outfile, index=False)
 
 
 

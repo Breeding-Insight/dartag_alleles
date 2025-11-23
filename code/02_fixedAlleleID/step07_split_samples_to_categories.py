@@ -25,11 +25,13 @@ def collect_passport_data(passport, category_col_name, sample_number_threshold):
     
     # Check if each category contains at least 10 samples
     category_to_remove = []
-    sample_lut['Others'] = ['AlleleID', 'CloneID', 'AlleleSequence']
     for category, sample_list in sample_lut.items():
         if len(sample_list) < int(sample_number_threshold) + 3: # 3 fixed columns
             print('Warning: category', category, 'contains less than', sample_number_threshold, 'samples:', len(sample_list) - 3)
-            sample_lut['Others'] = sample_lut['Others'] + sample_list[3:]
+            if 'Others' in sample_lut:
+                sample_lut['Others'] = sample_lut['Others'] + sample_list[3:]
+            else:
+                sample_lut['Others'] = ['AlleleID', 'CloneID', 'AlleleSequence']
             category_to_remove.append(category)
     inp.close()
     print('  # Number of samples in the PASSPORT: ', sample_count)
